@@ -18,6 +18,7 @@ module.exports = function (stream, options, callback) {
     err.expected = expected
     err.limit = limit
     callback(err)
+    stream.resume() // dump stream
     cleanup()
     return
   }
