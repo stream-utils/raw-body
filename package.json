@@ -1,0 +1,26 @@
+{
+  "name": "raw-body",
+  "description": "Get and validate the raw body of a readable stream.",
+  "version": "0.0.1",
+  "author": {
+    "name": "Jonathan Ong",
+    "email": "me@jongleberry.com",
+    "url": "http://jongleberry.com",
+    "twitter": "https://twitter.com/jongleberry"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jonathanong/raw-body.git"
+  },
+  "bugs": {
+    "mail": "me@jongleberry.com",
+    "url": "https://github.com/jonathanong/raw-body/issues"
+  },
+  "devDependencies": {
+    "mocha": "~1.12"
+  },
+  "scripts": {
+    "test": "make test"
+  }
+}

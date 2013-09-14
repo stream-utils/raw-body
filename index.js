@@ -10,7 +10,7 @@ module.exports = function (stream, options, callback) {
   stream.once('error', cleanup)
   stream.once('close', cleanup)
 
-  var limit = options.limit === 'number'
+  var limit = typeof options.limit === 'number'
     ? options.limit
     : null
 
@@ -33,7 +33,7 @@ module.exports = function (stream, options, callback) {
 
   function onData(chunk) {
     buffers.push(chunk)
-    received += chunk
+    received += chunk.length
 
     if (limit !== null && received > limit) {
       var err = new Error('request entity too large')
@@ -46,8 +46,6 @@ module.exports = function (stream, options, callback) {
   }
 
   function onEnd() {
-    cleanup()
-
     if (expected !== null && received !== expected) {
       var err = new Error('request size did not match content length')
       err.status = 400
@@ -57,6 +55,8 @@ module.exports = function (stream, options, callback) {
     } else {
       callback(null, Buffer.concat(buffers))
     }
+
+    cleanup()
   }
 
   function cleanup() {
