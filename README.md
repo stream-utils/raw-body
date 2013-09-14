@@ -44,7 +44,8 @@ getRawBody(req, function (err, buffer) {
   if (err)
     return next(err)
 
-  body.text = buffer.toString('utf8')
+  req.text = buffer.toString('utf8')
+  next()
 })
 ```
 
