@@ -4,12 +4,6 @@ module.exports = function (stream, options, callback) {
     options = {}
   }
 
-  stream.on('data', onData)
-  stream.once('end', onEnd)
-  stream.once('error', callback)
-  stream.once('error', cleanup)
-  stream.once('close', cleanup)
-
   var limit = typeof options.limit === 'number'
     ? options.limit
     : null
@@ -30,6 +24,12 @@ module.exports = function (stream, options, callback) {
 
   var received = 0
   var buffers = []
+
+  stream.on('data', onData)
+  stream.once('end', onEnd)
+  stream.once('error', callback)
+  stream.once('error', cleanup)
+  stream.once('close', cleanup)
 
   function onData(chunk) {
     buffers.push(chunk)
