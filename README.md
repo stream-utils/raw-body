@@ -1,4 +1,4 @@
-# Raw Body [![Build Status](https://travis-ci.org/jonathanong/raw-body.png)](https://travis-ci.org/jonathanong/raw-body)
+# Raw Body [![Build Status](https://travis-ci.org/stream-utils/raw-body.png)](https://travis-ci.org/stream-utils/raw-body)
 
 Gets the entire buffer of a stream and validates its length against an expected length and limit.
 Ideal for parsing request bodies.

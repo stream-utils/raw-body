@@ -11,11 +11,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jonathanong/raw-body.git"
+    "url": "https://github.com/stream-utils/raw-body.git"
   },
   "bugs": {
     "mail": "me@jongleberry.com",
-    "url": "https://github.com/jonathanong/raw-body/issues"
+    "url": "https://github.com/stream-utils/raw-body/issues"
   },
   "devDependencies": {
     "mocha": "~1.12"
