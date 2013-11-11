@@ -4,6 +4,9 @@ module.exports = function (stream, options, done) {
     options = {}
   }
 
+  if (!options)
+    options = {}
+
   var limit = typeof options.limit === 'number'
     ? options.limit
     : null
@@ -47,10 +50,8 @@ module.exports = function (stream, options, done) {
       err.status = 413
       err.received = received
       err.limit = limit
-      process.nextTick(function () {
-        done(err)
-        cleanup()
-      })
+      done(err)
+      cleanup()
     }
   }
 
@@ -60,16 +61,12 @@ module.exports = function (stream, options, done) {
       err.status = 400
       err.received = received
       err.expected = expected
-      process.nextTick(function () {
-        done(err)
-        cleanup()
-      })
+      done(err)
     } else {
-      process.nextTick(function () {
-        done(null, Buffer.concat(buffers))
-        cleanup()
-      })
+      done(null, Buffer.concat(buffers))
     }
+
+    cleanup()
   }
 
   function cleanup() {

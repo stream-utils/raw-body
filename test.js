@@ -2,6 +2,7 @@ var assert = require('assert')
 var fs = require('fs')
 var path = require('path')
 var Stream = require('stream')
+var co = require('co')
 
 var getRawBody = require('./')
 
@@ -26,6 +27,13 @@ describe('Raw Body', function () {
       checkBuffer(buf)
       done()
     })
+  })
+
+  it('should work as a yieldable', function (done) {
+    co(function* () {
+      var buf = yield getRawBody(createStream())
+      checkBuffer(buf)
+    })(done)
   })
 
   it('should work with expected length', function (done) {
@@ -70,6 +78,20 @@ describe('Raw Body', function () {
     }, function (err, buf) {
       assert.equal(err.status, 413)
     })
+  })
+
+  it('should work as a yieldable when expected > limit', function (done) {
+    co(function* () {
+      try {
+        yield getRawBody(createStream(), {
+          expected: length,
+          limit: length - 1
+        })
+        throw new Error()
+      } catch (err) {
+        assert.equal(err.status, 413)
+      }
+    })(done)
   })
 
   it('should work with an empty stream', function (done) {

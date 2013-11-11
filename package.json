@@ -18,9 +18,11 @@
     "url": "https://github.com/stream-utils/raw-body/issues"
   },
   "devDependencies": {
-    "mocha": "~1.12"
+    "co": "*",
+    "gnode": "*",
+    "mocha": "*"
   },
   "scripts": {
-    "test": "make test"
+    "test": "NODE=gnode make test"
   }
 }
