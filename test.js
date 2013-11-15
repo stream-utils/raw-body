@@ -56,6 +56,16 @@ describe('Raw Body', function () {
     })
   })
 
+  it('should work with limit as a string', function (done) {
+    getRawBody(createStream(), {
+      limit: '1gb'
+    }, function (err, buf) {
+      assert.ifError(err)
+      checkBuffer(buf)
+      done()
+    })
+  })
+
   it('should work with limit and expected length', function (done) {
     getRawBody(createStream(), {
       expected: length,

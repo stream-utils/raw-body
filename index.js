@@ -1,19 +1,22 @@
+var bytes = require('bytes')
+
 module.exports = function (stream, options, done) {
   if (typeof options === 'function') {
     done = options
     options = {}
+  } else if (!options) {
+    options = {}
   }
 
-  if (!options)
-    options = {}
+  var limit = null
+  if (typeof options.limit === 'number')
+    limit = options.limit
+  if (typeof options.limit === 'string')
+    limit = bytes(options.limit)
 
-  var limit = typeof options.limit === 'number'
-    ? options.limit
-    : null
-
-  var expected = !isNaN(options.expected)
-    ? parseInt(options.expected, 10)
-    : null
+  var expected = null
+  if (!isNaN(options.expected))
+    expected = parseInt(options.expected, 10)
 
   if (limit !== null && expected !== null && expected > limit) {
     var err = new Error('request entity too large')

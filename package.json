@@ -17,6 +17,9 @@
     "mail": "me@jongleberry.com",
     "url": "https://github.com/stream-utils/raw-body/issues"
   },
+  "dependencies": {
+    "bytes": "~0.2.1"
+  },
   "devDependencies": {
     "co": "*",
     "gnode": "*",
