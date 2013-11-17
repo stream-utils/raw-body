@@ -3,8 +3,6 @@
 Gets the entire buffer of a stream and validates its length against an expected length and maximum limit.
 Ideal for parsing request bodies.
 
-This is the callback version of [cat-stream](https://github.com/jonathanong/cat-stream), which is much more convoluted because streams suck.
-
 ## API
 
 ```js
