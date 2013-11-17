@@ -1,6 +1,6 @@
 # Raw Body [![Build Status](https://travis-ci.org/stream-utils/raw-body.png)](https://travis-ci.org/stream-utils/raw-body)
 
-Gets the entire buffer of a stream and validates its length against an expected length and limit.
+Gets the entire buffer of a stream and validates its length against an expected length and maximum limit.
 Ideal for parsing request bodies.
 
 This is the callback version of [cat-stream](https://github.com/jonathanong/cat-stream), which is much more convoluted because streams suck.
@@ -12,8 +12,8 @@ var getRawBody = require('raw-body')
 
 app.use(function (req, res, next) {
   getRawBody(req, {
-    expected: req.headers['content-length'],
-    limit: 1 * 1024 * 1024 // 1 mb
+    length: req.headers['content-length'],
+    limit: '1mb'
   }, function (err, buffer) {
     if (err)
       return next(err)
@@ -24,9 +24,20 @@ app.use(function (req, res, next) {
 })
 ```
 
+or in Koa generator:
+
+```js
+app.use(function* (next) {
+  var buffer = yield getRawBody(this.req, {
+    length: this.length,
+    limit: '1mb'
+  })
+})
+```
+
 ### Options
 
-- `expected` - The expected length of the stream.
+- `length` - The length length of the stream.
   If the contents of the stream do not add up to this length,
   an `400` error code is returned.
 - `limit` - The byte limit of the body.

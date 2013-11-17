@@ -36,9 +36,9 @@ describe('Raw Body', function () {
     })(done)
   })
 
-  it('should work with expected length', function (done) {
+  it('should work with length', function (done) {
     getRawBody(createStream(), {
-      expected: length
+      length: length
     }, function (err, buf) {
       assert.ifError(err)
       checkBuffer(buf)
@@ -66,9 +66,9 @@ describe('Raw Body', function () {
     })
   })
 
-  it('should work with limit and expected length', function (done) {
+  it('should work with limit and length', function (done) {
     getRawBody(createStream(), {
-      expected: length,
+      length: length,
       limit: length + 1
     }, function (err, buf) {
       assert.ifError(err)
@@ -77,24 +77,24 @@ describe('Raw Body', function () {
     })
   })
 
-  it('should check options for limit and expected length', function (done) {
+  it('should check options for limit and length', function (done) {
     var stream = createStream()
     // Stream should still be consumed.
     stream.once('end', done)
 
     getRawBody(stream, {
-      expected: length,
+      length: length,
       limit: length - 1
     }, function (err, buf) {
       assert.equal(err.status, 413)
     })
   })
 
-  it('should work as a yieldable when expected > limit', function (done) {
+  it('should work as a yieldable when length > limit', function (done) {
     co(function* () {
       try {
         yield getRawBody(createStream(), {
-          expected: length,
+          length: length,
           limit: length - 1
         })
         throw new Error()
@@ -108,7 +108,7 @@ describe('Raw Body', function () {
     var stream = new Stream()
 
     getRawBody(stream, {
-      expected: 0,
+      length: 0,
       limit: 1
     }, function (err, buf) {
       assert.ifError(err)
@@ -119,11 +119,11 @@ describe('Raw Body', function () {
     stream.emit('end')
   })
 
-  it('should throw on empty string and incorrect expected length', function (done) {
+  it('should throw on empty string and incorrect length', function (done) {
     var stream = new Stream()
 
     getRawBody(stream, {
-      expected: 1,
+      length: 1,
       limit: 2
     }, function (err, buf) {
       assert.equal(err.status, 400)
@@ -142,9 +142,9 @@ describe('Raw Body', function () {
     })
   })
 
-  it('should throw if length !== expected length', function (done) {
+  it('should throw if incorrect length supplied', function (done) {
     getRawBody(createStream(), {
-      expected: length - 1
+      length: length - 1
     }, function (err, buf) {
       assert.equal(err.status, 400)
       done()

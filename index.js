@@ -14,14 +14,14 @@ module.exports = function (stream, options, done) {
   if (typeof options.limit === 'string')
     limit = bytes(options.limit)
 
-  var expected = null
-  if (!isNaN(options.expected))
-    expected = parseInt(options.expected, 10)
+  var length = null
+  if (!isNaN(options.length))
+    length = parseInt(options.length, 10)
 
-  if (limit !== null && expected !== null && expected > limit) {
+  if (limit !== null && length !== null && length > limit) {
     var err = new Error('request entity too large')
     err.status = 413
-    err.expected = expected
+    err.length = length
     err.limit = limit
     stream.resume() // dump stream
     process.nextTick(function () {
@@ -58,12 +58,14 @@ module.exports = function (stream, options, done) {
     }
   }
 
-  function onEnd() {
-    if (expected !== null && received !== expected) {
+  function onEnd(err) {
+    if (err) {
+      done(err)
+    } else if (length !== null && received !== length) {
       var err = new Error('request size did not match content length')
       err.status = 400
       err.received = received
-      err.expected = expected
+      err.length = length
       done(err)
     } else {
       done(null, Buffer.concat(buffers))
@@ -77,8 +79,7 @@ module.exports = function (stream, options, done) {
 
     stream.removeListener('data', onData)
     stream.removeListener('end', onEnd)
-    stream.removeListener('error', done)
-    stream.removeListener('error', cleanup)
+    stream.removeListener('error', onEnd)
     stream.removeListener('close', cleanup)
   }
 }
