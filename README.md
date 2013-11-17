@@ -22,7 +22,7 @@ app.use(function (req, res, next) {
 })
 ```
 
-or in Koa generator:
+or in a Koa generator:
 
 ```js
 app.use(function* (next) {
