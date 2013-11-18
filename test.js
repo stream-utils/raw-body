@@ -150,4 +150,20 @@ describe('Raw Body', function () {
       done()
     })
   })
+
+  it('should work with {"test":"å"}', function (done) {
+    // https://github.com/visionmedia/express/issues/1816
+
+    var stream = new Stream.Readable()
+    stream.push('{"test":"å"}')
+    stream.push(null)
+
+    getRawBody(stream, {
+      length: 13
+    }, function (err, buf) {
+      assert.ok(buf)
+      assert.equal(buf.length, 13)
+      done()
+    })
+  })
 })
