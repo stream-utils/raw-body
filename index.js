@@ -8,6 +8,19 @@ module.exports = function (stream, options, done) {
     options = {}
   }
 
+  if (!stream._readableState) {
+    // dump the stream, though it's probably unnecessary
+    if (typeof stream.resume === 'function')
+      stream.resume()
+
+    process.nextTick(function () {
+      var err = new Error('only readable streams are supported')
+      err.status = 500
+      done(err)
+    })
+    return defer
+  }
+
   var limit = null
   if (typeof options.limit === 'number')
     limit = options.limit
@@ -19,12 +32,12 @@ module.exports = function (stream, options, done) {
     length = parseInt(options.length, 10)
 
   if (limit !== null && length !== null && length > limit) {
-    var err = new Error('request entity too large')
-    err.status = 413
-    err.length = length
-    err.limit = limit
     stream.resume() // dump stream
     process.nextTick(function () {
+      var err = new Error('request entity too large')
+      err.status = 413
+      err.length = length
+      err.limit = limit
       done(err)
     })
     return defer
@@ -62,11 +75,18 @@ module.exports = function (stream, options, done) {
     if (err) {
       done(err)
     } else if (length !== null && received !== length) {
-      var err = new Error('request size did not match content length')
-      err.status = 400
-      err.received = received
-      err.length = length
-      done(err)
+      var state = stream._readableState
+      if (!state || state.encoding === null) {
+        err = new Error('request size did not match content length')
+        err.status = 400
+        err.received = received
+        err.length = length
+        done(err)
+      } else {
+        err = new Error('raw-body expects a buffer stream, but a string chunk was received. please do not set an encoding')
+        err.status = 500
+        done(err)
+      }
     } else {
       done(null, Buffer.concat(buffers))
     }

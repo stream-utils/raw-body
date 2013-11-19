@@ -105,7 +105,8 @@ describe('Raw Body', function () {
   })
 
   it('should work with an empty stream', function (done) {
-    var stream = new Stream()
+    var stream = new Stream.Readable()
+    stream.push(null)
 
     getRawBody(stream, {
       length: 0,
@@ -120,7 +121,8 @@ describe('Raw Body', function () {
   })
 
   it('should throw on empty string and incorrect length', function (done) {
-    var stream = new Stream()
+    var stream = new Stream.Readable()
+    stream.push(null)
 
     getRawBody(stream, {
       length: 1,
@@ -163,6 +165,29 @@ describe('Raw Body', function () {
     }, function (err, buf) {
       assert.ok(buf)
       assert.equal(buf.length, 13)
+      done()
+    })
+  })
+
+  it('should throw if content-length mismatch and string stream', function (done) {
+    var stream = new Stream.Readable()
+    stream.push('{"test":"å"}')
+    stream.push(null)
+    stream.setEncoding('utf8')
+
+    getRawBody(stream, {
+      length: 13
+    }, function (err, buf) {
+      assert.equal(err.status, 500)
+      done()
+    })
+  })
+
+  it('should not supports streams1', function (done) {
+    var stream = new Stream()
+
+    getRawBody(stream, function (err) {
+      assert.equal(err.status, 500)
       done()
     })
   })
