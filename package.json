@@ -31,5 +31,8 @@
   },
   "scripts": {
     "test": "NODE=gnode make test && node ./test/acceptance.js"
+  },
+  "engines": {
+    "node": ">= 0.8.0"
   }
 }
