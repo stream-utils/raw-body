@@ -111,8 +111,6 @@ test('a stream that errored', function (assert) {
   var stream = createInfiniteStream()
 
   getRawBody(stream, function (err, body) {
-    console.log('wtf :(')
-
     assert.ok(err)
     assert.equal(err.message, 'BOOM')
 
