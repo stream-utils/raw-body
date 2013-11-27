@@ -109,8 +109,6 @@ module.exports = function (stream, options, done) {
       err.received = received
       err.length = err.expected = length
       done(err)
-      if (typeof stream.pause === 'function')
-        stream.pause()
     } else {
       done(null, decoder
         ? buffer + endStringDecoder(decoder)
