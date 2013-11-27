@@ -8,19 +8,6 @@ module.exports = function (stream, options, done) {
     options = {}
   }
 
-  if (!stream._readableState) {
-    // dump the stream, though it's probably unnecessary
-    if (typeof stream.resume === 'function')
-      stream.resume()
-
-    process.nextTick(function () {
-      var err = new Error('only readable streams are supported')
-      err.status = 500
-      done(err)
-    })
-    return defer
-  }
-
   var limit = null
   if (typeof options.limit === 'number')
     limit = options.limit

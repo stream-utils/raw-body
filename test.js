@@ -1,8 +1,9 @@
 var assert = require('assert')
 var fs = require('fs')
 var path = require('path')
-var Stream = require('stream')
 var co = require('co')
+var Readable = require('stream').Readable
+  || require('readable-stream').Readable
 
 var getRawBody = require('./')
 
@@ -105,7 +106,7 @@ describe('Raw Body', function () {
   })
 
   it('should work with an empty stream', function (done) {
-    var stream = new Stream.Readable()
+    var stream = new Readable()
     stream.push(null)
 
     getRawBody(stream, {
@@ -121,7 +122,7 @@ describe('Raw Body', function () {
   })
 
   it('should throw on empty string and incorrect length', function (done) {
-    var stream = new Stream.Readable()
+    var stream = new Readable()
     stream.push(null)
 
     getRawBody(stream, {
@@ -156,7 +157,7 @@ describe('Raw Body', function () {
   it('should work with {"test":"å"}', function (done) {
     // https://github.com/visionmedia/express/issues/1816
 
-    var stream = new Stream.Readable()
+    var stream = new Readable()
     stream.push('{"test":"å"}')
     stream.push(null)
 
@@ -170,7 +171,7 @@ describe('Raw Body', function () {
   })
 
   it('should throw if content-length mismatch and string stream', function (done) {
-    var stream = new Stream.Readable()
+    var stream = new Readable()
     stream.push('{"test":"å"}')
     stream.push(null)
     stream.setEncoding('utf8')
@@ -178,15 +179,6 @@ describe('Raw Body', function () {
     getRawBody(stream, {
       length: 13
     }, function (err, buf) {
-      assert.equal(err.status, 500)
-      done()
-    })
-  })
-
-  it('should not supports streams1', function (done) {
-    var stream = new Stream()
-
-    getRawBody(stream, function (err) {
       assert.equal(err.status, 500)
       done()
     })

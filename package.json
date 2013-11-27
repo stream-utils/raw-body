@@ -21,6 +21,7 @@
     "bytes": "~0.2.1"
   },
   "devDependencies": {
+    "readable-stream": "*",
     "co": "*",
     "gnode": "*",
     "mocha": "*"
