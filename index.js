@@ -25,9 +25,8 @@ module.exports = function (stream, options, done) {
   // note: we intentionally leave the stream paused,
   // so users should handle the stream themselves.
   if (limit !== null && length !== null && length > limit) {
-    if (typeof stream.pause === 'function') {
+    if (typeof stream.pause === 'function')
       stream.pause()
-    }
 
     process.nextTick(function () {
       var err = makeError('request entity too large', 'entity.too.large')
@@ -42,9 +41,8 @@ module.exports = function (stream, options, done) {
   var state = stream._readableState
   // streams2+: assert the stream encoding is buffer.
   if (state && state.encoding !== null) {
-    if (typeof stream.pause === 'function') {
+    if (typeof stream.pause === 'function')
       stream.pause()
-    }
 
     process.nextTick(function () {
       var err = makeError('stream encoding should not be set',
@@ -97,12 +95,11 @@ module.exports = function (stream, options, done) {
 
   function onEnd(err) {
     if (err) {
-      if (typeof stream.pause === 'function') {
+      if (typeof stream.pause === 'function')
         stream.pause()
-      }
       done(err)
     } else if (length !== null && received !== length) {
-      err = makeError('request size did not match content length', 
+      err = makeError('request size did not match content length',
         'request.size.invalid')
       err.status = err.statusCode = 400
       err.received = received
