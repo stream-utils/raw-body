@@ -72,3 +72,19 @@ test('a stream with a limit lower then length', function (assert) {
     assert.end()
   })
 })
+
+test('a stream with an encoding', function (assert) {
+  var stream = createInfiniteStream()
+  stream.setEncoding('utf8')
+
+  getRawBody(stream, {
+    limit: defaultLimit
+  }, function (err, body) {
+    assert.ok(err)
+    assert.equal(err.type, 'stream.encoding.set')
+    assert.equal(err.message, 'stream encoding should not be set')
+    assert.equal(err.statusCode, 500)
+
+    assert.end()
+  })
+})

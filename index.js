@@ -25,7 +25,7 @@ module.exports = function (stream, options, done) {
   // note: we intentionally leave the stream paused,
   // so users should handle the stream themselves.
   if (limit !== null && length !== null && length > limit) {
-    if (stream.pause) {
+    if (typeof stream.pause === 'function') {
       stream.pause()
     }
 
@@ -43,6 +43,10 @@ module.exports = function (stream, options, done) {
   var state = stream._readableState
   // streams2+: assert the stream encoding is buffer.
   if (state && state.encoding !== null) {
+    if (typeof stream.pause === 'function') {
+      stream.pause()
+    }
+
     process.nextTick(function () {
       var err = new Error('stream encoding should not be set')
       err.type = 'stream.encoding.set'
