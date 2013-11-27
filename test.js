@@ -2,8 +2,7 @@ var assert = require('assert')
 var fs = require('fs')
 var path = require('path')
 var co = require('co')
-var Readable = require('stream').Readable
-  || require('readable-stream').Readable
+var Readable = require('readable-stream').Readable
 
 var getRawBody = require('./')
 
