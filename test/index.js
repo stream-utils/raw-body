@@ -86,6 +86,21 @@ describe('Raw Body', function () {
       limit: length - 1
     }, function (err, buf) {
       assert.equal(err.status, 413)
+      assert.equal(err.statusCode, 413)
+      assert.equal(err.expected, length)
+      assert.equal(err.length, length)
+      assert.equal(err.limit, length - 1)
+      assert.equal(err.type, 'entity.too.large')
+      assert.equal(err.message, 'request entity too large')
+      assert.equal(JSON.stringify(err), JSON.stringify({
+        type: 'entity.too.large',
+        message: 'request entity too large',
+        statusCode: 413,
+        status: 413,
+        expected: length,
+        length: length,
+        limit: length - 1
+      }))
       done()
     })
   })
