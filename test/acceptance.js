@@ -2,6 +2,8 @@
 // file to exit prematurely. both `tape` & `mocha` do process.exit()
 var test = require('assert-tap').test
 var Readable = require('readable-stream').Readable
+var setTimeout = require('timers').setTimeout
+
 var getRawBody = require('../')
 
 // this test is about infinite streams. If this file never terminates
@@ -38,11 +40,11 @@ function createInfiniteStream() {
   stream._read = function () {
     var rand = 2 + Math.floor(Math.random() * 10)
 
-    process.nextTick(function () {
+    setTimeout(function () {
       for (var i = 0; i < rand; i++) {
         stream.push(createChunk())
       }
-    })
+    }, 100)
   }
 
   // immediately put the stream in flowing mode
@@ -103,4 +105,21 @@ test('a stream with a limit', function (assert) {
 
     assert.end()
   })
+})
+
+test('a stream that errored', function (assert) {
+  var stream = createInfiniteStream()
+
+  getRawBody(stream, function (err, body) {
+    console.log('wtf :(')
+
+    assert.ok(err)
+    assert.equal(err.message, 'BOOM')
+
+    assert.end()
+  })
+
+  setTimeout(function () {
+    stream.emit('error', new Error('BOOM'))
+  }, 500)
 })

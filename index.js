@@ -99,9 +99,10 @@ module.exports = function (stream, options, done) {
 
   function onEnd(err) {
     if (err) {
-      done(err)
-      if (typeof stream.pause === 'function')
+      if (typeof stream.pause === 'function') {
         stream.pause()
+      }
+      done(err)
     } else if (length !== null && received !== length) {
       err = new Error('request size did not match content length')
       err.type = 'request.size.invalid'
