@@ -24,7 +24,8 @@
     "readable-stream": "~1.0.17",
     "co": "*",
     "gnode": "*",
-    "mocha": "*"
+    "mocha": "*",
+    "through": "~2.3.4"
   },
   "scripts": {
     "test": "NODE=gnode make test"

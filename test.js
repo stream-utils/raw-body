@@ -2,6 +2,7 @@ var assert = require('assert')
 var fs = require('fs')
 var path = require('path')
 var co = require('co')
+var through = require('through')
 var Readable = require('readable-stream').Readable
 
 var getRawBody = require('./')
@@ -217,5 +218,25 @@ describe('Raw Body', function () {
         length: 13
       }, done)
     })
+  })
+
+  it('should work on streams1 stream', function (done) {
+    var stream = through()
+    stream.pause()
+    stream.write('foobar')
+    stream.write('foobaz')
+    stream.write('yay!!')
+    stream.end()
+
+    getRawBody(stream, {
+      encoding: true,
+      length: 17
+    }, function (err, value) {
+      assert.ifError(err)
+      done()
+    })
+
+    // you have to call resume() probably breaks in 0.8 (req, res)
+    stream.resume()
   })
 })
