@@ -1,6 +1,7 @@
 # Raw Body [![Build Status](https://travis-ci.org/stream-utils/raw-body.png)](https://travis-ci.org/stream-utils/raw-body)
 
-Gets the entire buffer of a stream and validates its length against an expected length and maximum limit.
+Gets the entire buffer of a stream either as a `Buffer` or a string.
+Validates the stream's length against an expected length and maximum limit.
 Ideal for parsing request bodies.
 
 ## API
@@ -11,12 +12,13 @@ var getRawBody = require('raw-body')
 app.use(function (req, res, next) {
   getRawBody(req, {
     length: req.headers['content-length'],
-    limit: '1mb'
-  }, function (err, buffer) {
+    limit: '1mb',
+    encoding: 'utf8'
+  }, function (err, string) {
     if (err)
       return next(err)
 
-    req.rawBody = buffer
+    req.text = string
     next()
   })
 })
@@ -26,14 +28,19 @@ or in a Koa generator:
 
 ```js
 app.use(function* (next) {
-  var buffer = yield getRawBody(this.req, {
+  var string = yield getRawBody(this.req, {
     length: this.length,
-    limit: '1mb'
+    limit: '1mb',
+    encoding: 'utf8'
   })
 })
 ```
 
-### Options
+### getRawBody(stream, [options], [callback])
+
+Returns a thunk for yielding with generators.
+
+Options:
 
 - `length` - The length length of the stream.
   If the contents of the stream do not add up to this length,
@@ -41,22 +48,27 @@ app.use(function* (next) {
 - `limit` - The byte limit of the body.
   If the body ends up being larger than this limit,
   a `413` error code is returned.
+- `encoding` - The requested encoding.
+  By default, a `Buffer` instance will be returned.
+  Most likely, you want `utf8`.
+  You can use any type of encoding supported by [StringDecoder](http://nodejs.org/api/string_decoder.html).
 
-### Strings
+`callback(err, res)`:
 
-This library only returns the raw buffer.
-If you want the string,
-you can do something like this:
+- `err` - the following attributes will be defined if applicable:
 
-```js
-getRawBody(req, function (err, buffer) {
-  if (err)
-    return next(err)
+    - `limit` - the limit in bytes
+    - `length` and `expected` - the expected length of the stream
+    - `received` - the received bytes
+    - `status` and `statusCode` - the corresponding status code for the error
+    - `type` - either `entity.too.large`, `request.size.invalid`, or `stream.encoding.set`
 
-  req.text = buffer.toString('utf8')
-  next()
-})
-```
+- `res` - the result, either as a `String` if an encoding was set or a `Buffer` otherwise.
+
+If an error occurs, the stream will be paused,
+and you are responsible for correctly disposing the stream.
+For HTTP requests, no handling is required if you send a response.
+For streams that use file descriptors, you should `stream.destroy()` or `stream.close()` to prevent leaks.
 
 ## License
 
