@@ -7,7 +7,7 @@ var through = require('through')
 var request = require('request')
 var Readable = require('readable-stream').Readable
 
-var getRawBody = require('./')
+var getRawBody = require('../')
 
 var file = path.join(__dirname, 'index.js')
 var length = fs.statSync(file).size
@@ -242,7 +242,7 @@ describe('Raw Body', function () {
     stream.resume()
   })
 
-  describe.only('when using with http server', function () {
+  describe('when using with http server', function () {
     var PORT = 10000 + Math.floor(Math.random() * 20000)
     var uri = 'http://localhost:' + PORT
     var server = http.createServer()
