@@ -238,7 +238,7 @@ describe('Raw Body', function () {
       done()
     })
 
-    // you have to call resume() probably breaks in 0.8 (req, res)
+    // you have to call resume() for through
     stream.resume()
   })
 
