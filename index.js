@@ -35,6 +35,19 @@ module.exports = function (stream, options, done) {
     return defer
   }
 
+  var state = stream._readableState
+  // streams2+: assert the stream encoding is buffer.
+  if (state && state.encoding !== null) {
+    process.nextTick(function () {
+      var err = new Error('stream encoding should not be set')
+      err.type = 'stream.encoding.set'
+      // developer error
+      err.status = err.statusCode = 500
+      done(err)
+    })
+    return defer
+  }
+
   var received = 0
   var buffers = []
 
@@ -70,20 +83,15 @@ module.exports = function (stream, options, done) {
   function onEnd(err) {
     if (err) {
       done(err)
+      if (typeof stream.pause === 'function')
+        stream.pause()
     } else if (length !== null && received !== length) {
-      var state = stream._readableState
-      if (!state || state.encoding === null) {
-        err = new Error('request size did not match content length')
-        err.type = 'request.size.invalid'
-        err.status = err.statusCode = 400
-        err.received = received
-        err.length = length
-        done(err)
-      } else {
-        err = new Error('raw-body expects a buffer stream, but a string chunk was received. please do not set an encoding')
-        err.status = 500
-        done(err)
-      }
+      err = new Error('request size did not match content length')
+      err.type = 'request.size.invalid'
+      err.status = err.statusCode = 400
+      err.received = received
+      err.length = length
+      done(err)
       if (typeof stream.pause === 'function')
         stream.pause()
     } else {

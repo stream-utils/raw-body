@@ -170,15 +170,13 @@ describe('Raw Body', function () {
     })
   })
 
-  it('should throw if content-length mismatch and string stream', function (done) {
+  it('should throw if stream encoding is set', function (done) {
     var stream = new Readable()
-    stream.push('{"test":"å"}')
+    stream.push('akl;sdjfklajsdfkljasdf')
     stream.push(null)
     stream.setEncoding('utf8')
 
-    getRawBody(stream, {
-      length: 13
-    }, function (err, buf) {
+    getRawBody(stream, function (err, buf) {
       assert.equal(err.status, 500)
       done()
     })
