@@ -25,6 +25,10 @@ module.exports = function (stream, options, done) {
   // note: we intentionally leave the stream paused,
   // so users should handle the stream themselves.
   if (limit !== null && length !== null && length > limit) {
+    if (stream.pause) {
+      stream.pause()
+    }
+
     process.nextTick(function () {
       var err = new Error('request entity too large')
       err.type = 'entity.too.large'

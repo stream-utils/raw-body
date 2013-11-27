@@ -26,7 +26,8 @@
     "gnode": "*",
     "mocha": "*",
     "through": "~2.3.4",
-    "request": "~2.27.0"
+    "request": "~2.27.0",
+    "assert-tap": "~0.1.4"
   },
   "scripts": {
     "test": "NODE=gnode make test"
