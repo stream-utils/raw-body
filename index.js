@@ -1,3 +1,4 @@
+var StringDecoder = require('string_decoder').StringDecoder
 var bytes = require('bytes')
 
 module.exports = function (stream, options, done) {
@@ -28,7 +29,7 @@ module.exports = function (stream, options, done) {
       var err = new Error('request entity too large')
       err.type = 'entity.too.large'
       err.status = err.statusCode = 413
-      err.length = length
+      err.length = err.expected = length
       err.limit = limit
       done(err)
     })
@@ -49,7 +50,13 @@ module.exports = function (stream, options, done) {
   }
 
   var received = 0
-  var buffers = []
+  // note: we delegate any invalid encodings to the constructor
+  var decoder = options.encoding
+    ? new StringDecoder(options.encoding)
+    : null
+  var buffer = decoder
+    ? ''
+    : []
 
   stream.on('data', onData)
   stream.once('end', onEnd)
@@ -64,8 +71,10 @@ module.exports = function (stream, options, done) {
   }
 
   function onData(chunk) {
-    buffers.push(chunk)
     received += chunk.length
+    decoder
+      ? buffer += decoder.write(chunk)
+      : buffer.push(chunk)
 
     if (limit !== null && received > limit) {
       if (typeof stream.pause === 'function')
@@ -90,23 +99,45 @@ module.exports = function (stream, options, done) {
       err.type = 'request.size.invalid'
       err.status = err.statusCode = 400
       err.received = received
-      err.length = length
+      err.length = err.expected = length
       done(err)
       if (typeof stream.pause === 'function')
         stream.pause()
     } else {
-      done(null, Buffer.concat(buffers))
+      done(null, decoder
+        ? buffer + endStringDecoder(decoder)
+        : Buffer.concat(buffer)
+      )
     }
 
     cleanup()
   }
 
   function cleanup() {
-    received = buffers = null
+    received = buffer = null
 
     stream.removeListener('data', onData)
     stream.removeListener('end', onEnd)
     stream.removeListener('error', onEnd)
     stream.removeListener('close', cleanup)
   }
+}
+
+// https://github.com/Raynos/body/blob/2512ced39e31776e5a2f7492b907330badac3a40/index.js#L72
+// bug fix for missing `StringDecoder.end` in v0.8.x
+function endStringDecoder(decoder) {
+    if (decoder.end) {
+        return decoder.end()
+    }
+
+    var res = ""
+
+    if (decoder.charReceived) {
+        var cr = decoder.charReceived
+        var buf = decoder.charBuffer
+        var enc = decoder.encoding
+        res += buf.slice(0, cr).toString(enc)
+    }
+
+    return res
 }

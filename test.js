@@ -79,15 +79,12 @@ describe('Raw Body', function () {
   })
 
   it('should check options for limit and length', function (done) {
-    var stream = createStream()
-    // Stream should still be consumed.
-    stream.once('end', done)
-
-    getRawBody(stream, {
+    getRawBody(createStream(), {
       length: length,
       limit: length - 1
     }, function (err, buf) {
       assert.equal(err.status, 413)
+      done()
     })
   })
 
@@ -179,6 +176,37 @@ describe('Raw Body', function () {
     getRawBody(stream, function (err, buf) {
       assert.equal(err.status, 500)
       done()
+    })
+  })
+
+  it('should throw when given an invalid encoding', function () {
+    assert.throws(function () {
+      getRawBody(new Readable(), {
+        encoding: 'akljsdflkajsdf'
+      }, function () {})
+    })
+  })
+
+  describe('when an encoding is set', function () {
+    it('should return a string', function (done) {
+      getRawBody(createStream(), {
+        encoding: 'utf8'
+      }, function (err, str) {
+        assert.ifError(err)
+        assert.equal(str, string)
+        done()
+      })
+    })
+
+    it('should correctly calculate the expected length', function (done) {
+      var stream = new Readable()
+      stream.push('{"test":"å"}')
+      stream.push(null)
+
+      getRawBody(stream, {
+        encoding: 'utf8',
+        length: 13
+      }, done)
     })
   })
 })
