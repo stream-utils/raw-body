@@ -19,7 +19,6 @@ module.exports = function (stream, options, done) {
     length = parseInt(options.length, 10)
 
   if (limit !== null && length !== null && length > limit) {
-    stream.resume() // dump stream
     process.nextTick(function () {
       var err = new Error('request entity too large')
       err.status = 413
@@ -49,6 +48,8 @@ module.exports = function (stream, options, done) {
     received += chunk.length
 
     if (limit !== null && received > limit) {
+      if (typeof stream.pause === 'function')
+        stream.pause()
       var err = new Error('request entity too large')
       err.status = 413
       err.received = received
@@ -74,6 +75,8 @@ module.exports = function (stream, options, done) {
         err.status = 500
         done(err)
       }
+      if (typeof stream.pause === 'function')
+        stream.pause()
     } else {
       done(null, Buffer.concat(buffers))
     }
