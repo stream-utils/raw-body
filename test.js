@@ -197,6 +197,16 @@ describe('Raw Body', function () {
       })
     })
 
+    it('should handle encoding true', function (done) {
+      getRawBody(createStream(), {
+        encoding: true
+      }, function (err, str) {
+        assert.ifError(err)
+        assert.equal(str, string)
+        done()
+      })
+    })
+
     it('should correctly calculate the expected length', function (done) {
       var stream = new Readable()
       stream.push('{"test":"å"}')

@@ -52,7 +52,7 @@ module.exports = function (stream, options, done) {
   var received = 0
   // note: we delegate any invalid encodings to the constructor
   var decoder = options.encoding
-    ? new StringDecoder(options.encoding)
+    ? new StringDecoder(options.encoding === true ? 'utf8' : options.encoding)
     : null
   var buffer = decoder
     ? ''
