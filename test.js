@@ -1,8 +1,10 @@
 var assert = require('assert')
 var fs = require('fs')
 var path = require('path')
+var http = require('http')
 var co = require('co')
 var through = require('through')
+var request = require('request')
 var Readable = require('readable-stream').Readable
 
 var getRawBody = require('./')
@@ -238,5 +240,48 @@ describe('Raw Body', function () {
 
     // you have to call resume() probably breaks in 0.8 (req, res)
     stream.resume()
+  })
+
+  describe.only('when using with http server', function () {
+    var PORT = 10000 + Math.floor(Math.random() * 20000)
+    var uri = 'http://localhost:' + PORT
+    var server = http.createServer()
+
+    before(function (done) {
+      server.on('request', function (req, res) {
+        getRawBody(req, {
+          length: req.headers['content-length']
+        }, function (err, body) {
+          if (err) {
+            res.statusCode = 500
+            return res.end(err.message)
+          }
+
+          res.end(body)
+        })
+      })
+
+      server.listen(PORT, done)
+    })
+
+    it('should echo data', function (done) {
+      var resp = createStream().pipe(request({
+        uri: uri,
+        method: 'POST'
+      }))
+
+      getRawBody(resp, {
+        encoding: true
+      }, function (err, str) {
+        assert.ifError(err)
+        assert.equal(str, string)
+
+        done()
+      })
+    })
+
+    after(function (done) {
+      server.close(done)
+    })
   })
 })
