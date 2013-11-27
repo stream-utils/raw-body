@@ -4,7 +4,8 @@ BIN = ./node_modules/.bin/
 test:
 	@${NODE} ${BIN}mocha \
 		--reporter spec \
-		--bail
+		--bail \
+		./test/index.js
 
 clean:
 	@rm -rf node_modules

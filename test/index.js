@@ -1,11 +1,13 @@
 var assert = require('assert')
 var fs = require('fs')
 var path = require('path')
+var http = require('http')
 var co = require('co')
-var Readable = require('stream').Readable
-  || require('readable-stream').Readable
+var through = require('through')
+var request = require('request')
+var Readable = require('readable-stream').Readable
 
-var getRawBody = require('./')
+var getRawBody = require('../')
 
 var file = path.join(__dirname, 'index.js')
 var length = fs.statSync(file).size
@@ -84,6 +86,21 @@ describe('Raw Body', function () {
       limit: length - 1
     }, function (err, buf) {
       assert.equal(err.status, 413)
+      assert.equal(err.statusCode, 413)
+      assert.equal(err.expected, length)
+      assert.equal(err.length, length)
+      assert.equal(err.limit, length - 1)
+      assert.equal(err.type, 'entity.too.large')
+      assert.equal(err.message, 'request entity too large')
+      assert.equal(JSON.stringify(err), JSON.stringify({
+        type: 'entity.too.large',
+        message: 'request entity too large',
+        statusCode: 413,
+        status: 413,
+        expected: length,
+        length: length,
+        limit: length - 1
+      }))
       done()
     })
   })
@@ -198,6 +215,16 @@ describe('Raw Body', function () {
       })
     })
 
+    it('should handle encoding true', function (done) {
+      getRawBody(createStream(), {
+        encoding: true
+      }, function (err, str) {
+        assert.ifError(err)
+        assert.equal(str, string)
+        done()
+      })
+    })
+
     it('should correctly calculate the expected length', function (done) {
       var stream = new Readable()
       stream.push('{"test":"å"}')
@@ -207,6 +234,69 @@ describe('Raw Body', function () {
         encoding: 'utf8',
         length: 13
       }, done)
+    })
+  })
+
+  it('should work on streams1 stream', function (done) {
+    var stream = through()
+    stream.pause()
+    stream.write('foobar')
+    stream.write('foobaz')
+    stream.write('yay!!')
+    stream.end()
+
+    getRawBody(stream, {
+      encoding: true,
+      length: 17
+    }, function (err, value) {
+      assert.ifError(err)
+      done()
+    })
+
+    // you have to call resume() for through
+    stream.resume()
+  })
+
+  describe('when using with http server', function () {
+    var PORT = 10000 + Math.floor(Math.random() * 20000)
+    var uri = 'http://localhost:' + PORT
+    var server = http.createServer()
+
+    before(function (done) {
+      server.on('request', function (req, res) {
+        getRawBody(req, {
+          length: req.headers['content-length']
+        }, function (err, body) {
+          if (err) {
+            res.statusCode = 500
+            return res.end(err.message)
+          }
+
+          res.end(body)
+        })
+      })
+
+      server.listen(PORT, done)
+    })
+
+    it('should echo data', function (done) {
+      var resp = createStream().pipe(request({
+        uri: uri,
+        method: 'POST'
+      }))
+
+      getRawBody(resp, {
+        encoding: true
+      }, function (err, str) {
+        assert.ifError(err)
+        assert.equal(str, string)
+
+        done()
+      })
+    })
+
+    after(function (done) {
+      server.close(done)
     })
   })
 })

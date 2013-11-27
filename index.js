@@ -25,9 +25,12 @@ module.exports = function (stream, options, done) {
   // note: we intentionally leave the stream paused,
   // so users should handle the stream themselves.
   if (limit !== null && length !== null && length > limit) {
+    if (typeof stream.pause === 'function') {
+      stream.pause()
+    }
+
     process.nextTick(function () {
-      var err = new Error('request entity too large')
-      err.type = 'entity.too.large'
+      var err = makeError('request entity too large', 'entity.too.large')
       err.status = err.statusCode = 413
       err.length = err.expected = length
       err.limit = limit
@@ -39,9 +42,13 @@ module.exports = function (stream, options, done) {
   var state = stream._readableState
   // streams2+: assert the stream encoding is buffer.
   if (state && state.encoding !== null) {
+    if (typeof stream.pause === 'function') {
+      stream.pause()
+    }
+
     process.nextTick(function () {
-      var err = new Error('stream encoding should not be set')
-      err.type = 'stream.encoding.set'
+      var err = makeError('stream encoding should not be set',
+        'stream.encoding.set')
       // developer error
       err.status = err.statusCode = 500
       done(err)
@@ -52,7 +59,7 @@ module.exports = function (stream, options, done) {
   var received = 0
   // note: we delegate any invalid encodings to the constructor
   var decoder = options.encoding
-    ? new StringDecoder(options.encoding)
+    ? new StringDecoder(options.encoding === true ? 'utf8' : options.encoding)
     : null
   var buffer = decoder
     ? ''
@@ -79,8 +86,7 @@ module.exports = function (stream, options, done) {
     if (limit !== null && received > limit) {
       if (typeof stream.pause === 'function')
         stream.pause()
-      var err = new Error('request entity too large')
-      err.type = 'entity.too.large'
+      var err = makeError('request entity too large', 'entity.too.large')
       err.status = err.statusCode = 413
       err.received = received
       err.limit = limit
@@ -91,18 +97,17 @@ module.exports = function (stream, options, done) {
 
   function onEnd(err) {
     if (err) {
-      done(err)
-      if (typeof stream.pause === 'function')
+      if (typeof stream.pause === 'function') {
         stream.pause()
+      }
+      done(err)
     } else if (length !== null && received !== length) {
-      err = new Error('request size did not match content length')
-      err.type = 'request.size.invalid'
+      err = makeError('request size did not match content length', 
+        'request.size.invalid')
       err.status = err.statusCode = 400
       err.received = received
       err.length = err.expected = length
       done(err)
-      if (typeof stream.pause === 'function')
-        stream.pause()
     } else {
       done(null, decoder
         ? buffer + endStringDecoder(decoder)
@@ -121,6 +126,21 @@ module.exports = function (stream, options, done) {
     stream.removeListener('error', onEnd)
     stream.removeListener('close', cleanup)
   }
+}
+
+// to create serializable errors you must re-set message so
+// that it is enumerable and you must re configure the type
+// property so that is writable and enumerable
+function makeError(message, type) {
+  var error = new Error()
+  error.message = message
+  Object.defineProperty(error, 'type', {
+    value: type,
+    enumerable: true,
+    writable: true,
+    configurable: true
+  })
+  return error
 }
 
 // https://github.com/Raynos/body/blob/2512ced39e31776e5a2f7492b907330badac3a40/index.js#L72

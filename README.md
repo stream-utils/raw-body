@@ -52,6 +52,7 @@ Options:
   By default, a `Buffer` instance will be returned.
   Most likely, you want `utf8`.
   You can use any type of encoding supported by [StringDecoder](http://nodejs.org/api/string_decoder.html).
+  You can also pass `true` which sets it to the default `utf8`
 
 `callback(err, res)`:
 

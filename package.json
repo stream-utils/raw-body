@@ -21,12 +21,15 @@
     "bytes": "~0.2.1"
   },
   "devDependencies": {
-    "readable-stream": "*",
+    "readable-stream": "~1.0.17",
     "co": "*",
     "gnode": "*",
-    "mocha": "*"
+    "mocha": "*",
+    "through": "~2.3.4",
+    "request": "~2.27.0",
+    "assert-tap": "~0.1.4"
   },
   "scripts": {
-    "test": "NODE=gnode make test"
+    "test": "NODE=gnode make test && node ./test/acceptance.js"
   }
 }
