@@ -8,16 +8,21 @@ module.exports = function (stream, options, done) {
     options = {}
   }
 
+  // convert the limit to an integer
   var limit = null
   if (typeof options.limit === 'number')
     limit = options.limit
   if (typeof options.limit === 'string')
     limit = bytes(options.limit)
 
+  // convert the expected length to an integer
   var length = null
   if (!isNaN(options.length))
     length = parseInt(options.length, 10)
 
+  // check the length and limit options.
+  // note: we intentionally leave the stream paused,
+  // so users should handle the stream themselves.
   if (limit !== null && length !== null && length > limit) {
     process.nextTick(function () {
       var err = new Error('request entity too large')
@@ -40,6 +45,7 @@ module.exports = function (stream, options, done) {
 
   return defer
 
+  // yieldable support
   function defer(fn) {
     done = fn
   }
