@@ -30,6 +30,6 @@
     "assert-tap": "~0.1.4"
   },
   "scripts": {
-    "test": "NODE=gnode make test"
+    "test": "NODE=gnode make test && node ./test/acceptance.js"
   }
 }
