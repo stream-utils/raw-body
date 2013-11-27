@@ -21,7 +21,8 @@ module.exports = function (stream, options, done) {
   if (limit !== null && length !== null && length > limit) {
     process.nextTick(function () {
       var err = new Error('request entity too large')
-      err.status = 413
+      err.type = 'entity.too.large'
+      err.status = err.statusCode = 413
       err.length = length
       err.limit = limit
       done(err)
@@ -51,7 +52,8 @@ module.exports = function (stream, options, done) {
       if (typeof stream.pause === 'function')
         stream.pause()
       var err = new Error('request entity too large')
-      err.status = 413
+      err.type = 'entity.too.large'
+      err.status = err.statusCode = 413
       err.received = received
       err.limit = limit
       done(err)
@@ -66,7 +68,8 @@ module.exports = function (stream, options, done) {
       var state = stream._readableState
       if (!state || state.encoding === null) {
         err = new Error('request size did not match content length')
-        err.status = 400
+        err.type = 'request.size.invalid'
+        err.status = err.statusCode = 400
         err.received = received
         err.length = length
         done(err)
