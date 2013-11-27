@@ -36,7 +36,7 @@ function createChunk() {
 function createInfiniteStream() {
   var stream = new Readable()
   stream._read = function () {
-    var rand = Math.floor(Math.random() * 10)
+    var rand = 2 + Math.floor(Math.random() * 10)
 
     process.nextTick(function () {
       for (var i = 0; i < rand; i++) {
@@ -84,6 +84,22 @@ test('a stream with an encoding', function (assert) {
     assert.equal(err.type, 'stream.encoding.set')
     assert.equal(err.message, 'stream encoding should not be set')
     assert.equal(err.statusCode, 500)
+
+    assert.end()
+  })
+})
+
+test('a stream with a limit', function (assert) {
+  var stream = createInfiniteStream()
+
+  getRawBody(stream, {
+    limit: defaultLimit
+  }, function (err, body) {
+    assert.ok(err)
+    assert.equal(err.type, 'entity.too.large')
+    assert.equal(err.statusCode, 413)
+    assert.ok(err.received > defaultLimit)
+    assert.equal(err.limit, defaultLimit)
 
     assert.end()
   })
