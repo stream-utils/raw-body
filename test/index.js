@@ -3,7 +3,7 @@ var fs = require('fs')
 var path = require('path')
 var http = require('http')
 var co = require('co')
-var through = require('through')
+var through = require('through2')
 var request = require('request')
 var Readable = require('readable-stream').Readable
 
@@ -25,63 +25,56 @@ function checkBuffer(buf) {
 
 describe('Raw Body', function () {
   it('should work without any options', function (done) {
-    getRawBody(createStream(), function (err, buf) {
+    createStream().pipe(getRawBody(function (err, buf) {
       assert.ifError(err)
       checkBuffer(buf)
       done()
-    })
-  })
-
-  it('should work as a yieldable', function (done) {
-    co(function* () {
-      var buf = yield getRawBody(createStream())
-      checkBuffer(buf)
-    })(done)
+    }))
   })
 
   it('should work with length', function (done) {
-    getRawBody(createStream(), {
+    createStream().pipe(getRawBody({
       length: length
     }, function (err, buf) {
       assert.ifError(err)
       checkBuffer(buf)
       done()
-    })
+    }))
   })
 
   it('should work with limit', function (done) {
-    getRawBody(createStream(), {
+    createStream().pipe(getRawBody({
       limit: length + 1
     }, function (err, buf) {
       assert.ifError(err)
       checkBuffer(buf)
       done()
-    })
+    }))
   })
 
   it('should work with limit as a string', function (done) {
-    getRawBody(createStream(), {
+    createStream().pipe(getRawBody({
       limit: '1gb'
     }, function (err, buf) {
       assert.ifError(err)
       checkBuffer(buf)
       done()
-    })
+    }))
   })
 
   it('should work with limit and length', function (done) {
-    getRawBody(createStream(), {
+    createStream().pipe(getRawBody({
       length: length,
       limit: length + 1
     }, function (err, buf) {
       assert.ifError(err)
       checkBuffer(buf)
       done()
-    })
+    }))
   })
 
   it('should check options for limit and length', function (done) {
-    getRawBody(createStream(), {
+    createStream().pipe(getRawBody({
       length: length,
       limit: length - 1
     }, function (err, buf) {
@@ -102,35 +95,21 @@ describe('Raw Body', function () {
         limit: length - 1
       }))
       done()
-    })
-  })
-
-  it('should work as a yieldable when length > limit', function (done) {
-    co(function* () {
-      try {
-        yield getRawBody(createStream(), {
-          length: length,
-          limit: length - 1
-        })
-        throw new Error()
-      } catch (err) {
-        assert.equal(err.status, 413)
-      }
-    })(done)
+    }))
   })
 
   it('should work with an empty stream', function (done) {
     var stream = new Readable()
     stream.push(null)
 
-    getRawBody(stream, {
+    stream.pipe(getRawBody({
       length: 0,
       limit: 1
     }, function (err, buf) {
       assert.ifError(err)
       assert.equal(buf.length, 0)
       done()
-    })
+    }))
 
     stream.emit('end')
   })
@@ -139,33 +118,33 @@ describe('Raw Body', function () {
     var stream = new Readable()
     stream.push(null)
 
-    getRawBody(stream, {
+    stream.pipe(getRawBody({
       length: 1,
       limit: 2
     }, function (err, buf) {
       assert.equal(err.status, 400)
       done()
-    })
+    }))
 
     stream.emit('end')
   })
 
   it('should throw if length > limit', function (done) {
-    getRawBody(createStream(), {
+    createStream().pipe(getRawBody({
       limit: length - 1
     }, function (err, buf) {
       assert.equal(err.status, 413)
       done()
-    })
+    }))
   })
 
   it('should throw if incorrect length supplied', function (done) {
-    getRawBody(createStream(), {
+    createStream().pipe(getRawBody({
       length: length - 1
     }, function (err, buf) {
       assert.equal(err.status, 400)
       done()
-    })
+    }))
   })
 
   it('should work with {"test":"å"}', function (done) {
@@ -175,13 +154,13 @@ describe('Raw Body', function () {
     stream.push('{"test":"å"}')
     stream.push(null)
 
-    getRawBody(stream, {
+    stream.pipe(getRawBody({
       length: 13
     }, function (err, buf) {
       assert.ok(buf)
       assert.equal(buf.length, 13)
       done()
-    })
+    }))
   })
 
   it('should throw if stream encoding is set', function (done) {
@@ -190,39 +169,39 @@ describe('Raw Body', function () {
     stream.push(null)
     stream.setEncoding('utf8')
 
-    getRawBody(stream, function (err, buf) {
+    stream.pipe(getRawBody(function (err, buf) {
       assert.equal(err.status, 500)
       done()
-    })
+    }))
   })
 
   it('should throw when given an invalid encoding', function () {
     assert.throws(function () {
-      getRawBody(new Readable(), {
+      new Readable().pipe(getRawBody({
         encoding: 'akljsdflkajsdf'
-      }, function () {})
+      }, function () {}))
     })
   })
 
   describe('when an encoding is set', function () {
     it('should return a string', function (done) {
-      getRawBody(createStream(), {
+      createStream().pipe(getRawBody({
         encoding: 'utf8'
       }, function (err, str) {
         assert.ifError(err)
         assert.equal(str, string)
         done()
-      })
+      }))
     })
 
     it('should handle encoding true', function (done) {
-      getRawBody(createStream(), {
+      createStream().pipe(getRawBody({
         encoding: true
       }, function (err, str) {
         assert.ifError(err)
         assert.equal(str, string)
         done()
-      })
+      }))
     })
 
     it('should correctly calculate the expected length', function (done) {
@@ -230,10 +209,10 @@ describe('Raw Body', function () {
       stream.push('{"test":"å"}')
       stream.push(null)
 
-      getRawBody(stream, {
+      stream.pipe(getRawBody({
         encoding: 'utf8',
         length: 13
-      }, done)
+      }, done))
     })
   })
 
@@ -245,13 +224,13 @@ describe('Raw Body', function () {
     stream.write('yay!!')
     stream.end()
 
-    getRawBody(stream, {
+    stream.pipe(getRawBody({
       encoding: true,
       length: 17
     }, function (err, value) {
       assert.ifError(err)
       done()
-    })
+    }))
 
     // you have to call resume() for through
     stream.resume()
@@ -264,7 +243,7 @@ describe('Raw Body', function () {
 
     before(function (done) {
       server.on('request', function (req, res) {
-        getRawBody(req, {
+        req.pipe(getRawBody({
           length: req.headers['content-length']
         }, function (err, body) {
           if (err) {
@@ -273,7 +252,7 @@ describe('Raw Body', function () {
           }
 
           res.end(body)
-        })
+        }))
       })
 
       server.listen(PORT, done)
@@ -285,14 +264,14 @@ describe('Raw Body', function () {
         method: 'POST'
       }))
 
-      getRawBody(resp, {
+      resp.pipe(getRawBody({
         encoding: true
       }, function (err, str) {
         assert.ifError(err)
         assert.equal(str, string)
 
         done()
-      })
+      }))
     })
 
     after(function (done) {
