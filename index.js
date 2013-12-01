@@ -1,7 +1,8 @@
 var StringDecoder = require('string_decoder').StringDecoder
 var bytes = require('bytes')
+var through = require('through2')
 
-module.exports = function (stream, options, done) {
+module.exports = function (options, done) {  
   if (typeof options === 'function') {
     done = options
     options = {}
@@ -21,13 +22,11 @@ module.exports = function (stream, options, done) {
   if (!isNaN(options.length))
     length = parseInt(options.length, 10)
 
+  var stream = through(onData, onEnd)
+    
   // check the length and limit options.
-  // note: we intentionally leave the stream paused,
-  // so users should handle the stream themselves.
   if (limit !== null && length !== null && length > limit) {
-    if (typeof stream.pause === 'function')
-      stream.pause()
-
+    stream.pause()
     process.nextTick(function () {
       var err = makeError('request entity too large', 'entity.too.large')
       err.status = err.statusCode = 413
@@ -35,15 +34,13 @@ module.exports = function (stream, options, done) {
       err.limit = limit
       done(err)
     })
-    return defer
+    return stream
   }
 
   var state = stream._readableState
   // streams2+: assert the stream encoding is buffer.
   if (state && state.encoding != null) {
-    if (typeof stream.pause === 'function')
-      stream.pause()
-
+    stream.pause()
     process.nextTick(function () {
       var err = makeError('stream encoding should not be set',
         'stream.encoding.set')
@@ -51,9 +48,9 @@ module.exports = function (stream, options, done) {
       err.status = err.statusCode = 500
       done(err)
     })
-    return defer
+    return stream
   }
-
+  
   var received = 0
   // note: we delegate any invalid encodings to the constructor
   var decoder = options.encoding
@@ -63,27 +60,18 @@ module.exports = function (stream, options, done) {
     ? ''
     : []
 
-  stream.on('data', onData)
-  stream.once('end', onEnd)
-  stream.once('error', onEnd)
-  stream.once('close', cleanup)
+  stream.on('error', done)
+  
+  return stream
 
-  return defer
-
-  // yieldable support
-  function defer(fn) {
-    done = fn
-  }
-
-  function onData(chunk) {
+  function onData(chunk, enc, next) {
     received += chunk.length
     decoder
       ? buffer += decoder.write(chunk)
       : buffer.push(chunk)
 
     if (limit !== null && received > limit) {
-      if (typeof stream.pause === 'function')
-        stream.pause()
+      stream.pause()
       var err = makeError('request entity too large', 'entity.too.large')
       err.status = err.statusCode = 413
       err.received = received
@@ -91,14 +79,12 @@ module.exports = function (stream, options, done) {
       done(err)
       cleanup()
     }
+    
+    next()
   }
 
-  function onEnd(err) {
-    if (err) {
-      if (typeof stream.pause === 'function')
-        stream.pause()
-      done(err)
-    } else if (length !== null && received !== length) {
+  function onEnd(callback) {
+    if (length !== null && received !== length) {
       err = makeError('request size did not match content length',
         'request.size.invalid')
       err.status = err.statusCode = 400
@@ -113,15 +99,11 @@ module.exports = function (stream, options, done) {
     }
 
     cleanup()
+    callback()
   }
 
   function cleanup() {
     received = buffer = null
-
-    stream.removeListener('data', onData)
-    stream.removeListener('end', onEnd)
-    stream.removeListener('error', onEnd)
-    stream.removeListener('close', cleanup)
   }
 }
 
