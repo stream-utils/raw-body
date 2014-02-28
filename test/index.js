@@ -168,6 +168,17 @@ describe('Raw Body', function () {
     })
   })
 
+  it('should work with if length is null', function (done) {
+    getRawBody(createStream(), {
+      length: null,
+      limit: length + 1
+    }, function (err, buf) {
+      assert.ifError(err)
+      checkBuffer(buf)
+      done()
+    })
+  })
+
   it('should work with {"test":"å"}', function (done) {
     // https://github.com/visionmedia/express/issues/1816
 
