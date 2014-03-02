@@ -3,7 +3,7 @@ var fs = require('fs')
 var path = require('path')
 var http = require('http')
 var co = require('co')
-var through = require('through')
+var through = require('through2')
 var request = require('request')
 var Readable = require('readable-stream').Readable
 
@@ -51,9 +51,7 @@ describe('Raw Body', function () {
 
   it('should work when length=0', function (done) {
     var t = through()
-    setTimeout(function () {
-      t.end()
-    })
+    t.end()
 
     getRawBody(t, {
       length: 0,

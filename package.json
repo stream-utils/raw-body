@@ -22,11 +22,11 @@
   },
   "devDependencies": {
     "readable-stream": "~1.0.17",
-    "co": "2",
+    "co": "3",
     "gnode": "~0.0.4",
-    "mocha": "~1.14.0",
-    "through": "~2.3.4",
-    "request": "~2.27.0",
+    "mocha": "^1.14.0",
+    "through2": "~0.4.1",
+    "request": "^2.27.0",
     "assert-tap": "~0.1.4"
   },
   "scripts": {
