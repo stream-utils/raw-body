@@ -49,6 +49,22 @@ describe('Raw Body', function () {
     })
   })
 
+  it('should work when length=0', function (done) {
+    var t = through()
+    setTimeout(function () {
+      t.end()
+    })
+
+    getRawBody(t, {
+      length: 0,
+      encoding: true
+    }, function (err, str) {
+      assert.ifError(err)
+      assert.equal(str, '')
+      done()
+    })
+  })
+
   it('should work with limit', function (done) {
     getRawBody(createStream(), {
       limit: length + 1
