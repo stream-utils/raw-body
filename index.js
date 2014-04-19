@@ -7,6 +7,10 @@ module.exports = function (stream, options, done) {
     options = {}
   } else if (!options) {
     options = {}
+  } else if (options === true) {
+    options = {
+      encoding: 'utf8'
+    }
   }
 
   // convert the limit to an integer

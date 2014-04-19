@@ -32,6 +32,14 @@ describe('Raw Body', function () {
     })
   })
 
+  it('should work with `true` as an option', function (done) {
+    getRawBody(createStream(), true, function (err, buf) {
+      assert.ifError(err)
+      assert.equal(typeof buf, 'string')
+      done()
+    })
+  })
+
   it('should work as a yieldable', function (done) {
     co(function* () {
       var buf = yield getRawBody(createStream())
