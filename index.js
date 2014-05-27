@@ -42,10 +42,13 @@ module.exports = function (stream, options, done) {
     return defer
   }
 
-  // streams1: assert request encoding is buffer
+  // streams1: assert request encoding is buffer.
   // streams2+: assert the stream encoding is buffer.
+  //   stream._decoder: streams1
+  //   state.encoding: streams2
+  //   state.decoder: streams2, specifically < 0.10.6
   var state = stream._readableState
-  if (stream._decoder || (state && state.encoding != null)) {
+  if (stream._decoder || (state && (state.encoding || state.decoder))) {
     if (typeof stream.pause === 'function')
       stream.pause()
 
