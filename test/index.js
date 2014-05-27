@@ -297,6 +297,10 @@ describe('Raw Body', function () {
 
     before(function (done) {
       server.on('request', function (req, res) {
+        if (req.headers['x-req-encoding']) {
+          req.setEncoding(req.headers['x-req-encoding']);
+        }
+
         getRawBody(req, {
           length: req.headers['content-length']
         }, function (err, body) {
@@ -323,6 +327,25 @@ describe('Raw Body', function () {
       }, function (err, str) {
         assert.ifError(err)
         assert.equal(str, string)
+
+        done()
+      })
+    })
+
+    it('should throw if stream encoding is set', function (done) {
+      var resp = createStream().pipe(request({
+        uri: uri,
+        method: 'POST',
+        headers: {
+          'x-req-encoding': 'utf8'
+        }
+      }))
+
+      getRawBody(resp, {
+        encoding: true
+      }, function (err, str) {
+        assert.ifError(err)
+        assert.equal(str, 'stream encoding should not be set')
 
         done()
       })
