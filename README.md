@@ -1,6 +1,6 @@
 # raw-body
 
-[![NPM version](https://badge.fury.io/js/method-override.svg)](http://badge.fury.io/js/raw-body)
+[![NPM version](https://badge.fury.io/js/raw-body.svg)](http://badge.fury.io/js/raw-body)
 [![Build Status](https://travis-ci.org/stream-utils/raw-body.svg?branch=master)](https://travis-ci.org/stream-utils/raw-body)
 [![Coverage Status](https://img.shields.io/coveralls/stream-utils/raw-body.svg?branch=master)](https://coveralls.io/r/stream-utils/raw-body)
 
