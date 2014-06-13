@@ -2,7 +2,6 @@ var assert = require('assert')
 var fs = require('fs')
 var path = require('path')
 var http = require('http')
-var co = require('co')
 var through = require('through2')
 var request = require('request')
 var Readable = require('readable-stream').Readable
@@ -40,11 +39,13 @@ describe('Raw Body', function () {
     })
   })
 
-  it('should work as a yieldable', function (done) {
-    co(function* () {
-      var buf = yield getRawBody(createStream())
+  it('should work as a thunk', function (done) {
+    var thunk = getRawBody(createStream())
+    thunk(function (err, buf) {
+      assert.ifError(err)
       checkBuffer(buf)
-    })(done)
+      done()
+    })
   })
 
   it('should work with length', function (done) {
@@ -127,18 +128,15 @@ describe('Raw Body', function () {
     })
   })
 
-  it('should work as a yieldable when length > limit', function (done) {
-    co(function* () {
-      try {
-        yield getRawBody(createStream(), {
-          length: length,
-          limit: length - 1
-        })
-        throw new Error()
-      } catch (err) {
-        assert.equal(err.status, 413)
-      }
-    })(done)
+  it('should work as a thunk when length > limit', function (done) {
+    var thunk = getRawBody(createStream(), {
+      length: length,
+      limit: length - 1
+    })
+    thunk(function (err, buf) {
+      assert.equal(err.status, 413)
+      done()
+    })
   })
 
   it('should work with an empty stream', function (done) {

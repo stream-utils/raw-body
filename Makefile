@@ -1,9 +1,7 @@
-NODE ?= node
 BIN = ./node_modules/.bin/
 
 test:
-	@${NODE} ${BIN}mocha \
-		--harmony-generators \
+	node ${BIN}mocha \
 		--reporter spec \
 		--bail \
 		./test/index.js

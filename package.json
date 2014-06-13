@@ -10,8 +10,6 @@
   },
   "devDependencies": {
     "readable-stream": "~1.0.17",
-    "co": "3",
-    "gnode": "~0.0.4",
     "mocha": "^1.14.0",
     "through2": "~0.4.1",
     "request": "^2.27.0",
