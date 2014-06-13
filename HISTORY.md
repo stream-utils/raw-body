@@ -1,5 +1,5 @@
-unreleased
-==========
+1.2.0 / 2014-06-13
+==================
 
   * Passing string as `options` interpreted as encoding
   * Support all encodings from `iconv-lite`
