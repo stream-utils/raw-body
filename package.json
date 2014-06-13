@@ -9,16 +9,15 @@
     "bytes": "1"
   },
   "devDependencies": {
+    "mocha": "~1.20.1",
     "readable-stream": "~1.0.17",
-    "mocha": "^1.14.0",
-    "through2": "~0.4.1",
-    "request": "^2.27.0",
-    "assert-tap": "~0.1.4"
-  },
-  "scripts": {
-    "test": "NODE=gnode make test && node ./test/acceptance.js"
+    "request": ">= 2.36.0 < 3",
+    "through2": "~0.4.1"
   },
   "engines": {
     "node": ">= 0.8.0"
+  },
+  "scripts": {
+    "test": "mocha --reporter spec --bail test/"
   }
 }
