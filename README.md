@@ -1,4 +1,7 @@
-# Raw Body [![Build Status](https://travis-ci.org/stream-utils/raw-body.svg?branch=master)](https://travis-ci.org/stream-utils/raw-body)
+# raw-body
+
+[![NPM version](https://badge.fury.io/js/method-override.svg)](http://badge.fury.io/js/raw-body)
+[![Build Status](https://travis-ci.org/stream-utils/raw-body.svg?branch=master)](https://travis-ci.org/stream-utils/raw-body)
 
 Gets the entire buffer of a stream either as a `Buffer` or a string.
 Validates the stream's length against an expected length and maximum limit.
