@@ -1,19 +1,25 @@
 var bytes = require('bytes')
-
-// NOTE: the trailing slash is not a typo
-var StringDecoder = require('string_decoder/').StringDecoder
+var iconv = require('iconv-lite')
 
 module.exports = function (stream, options, done) {
+  if (options === true || typeof options === 'string') {
+    // short cut for encoding
+    options = {
+      encoding: options
+    }
+  }
+
+  options = options || {}
+
   if (typeof options === 'function') {
     done = options
     options = {}
-  } else if (!options) {
-    options = {}
-  } else if (options === true) {
-    options = {
-      encoding: 'utf8'
-    }
   }
+
+  // get encoding
+  var encoding = options.encoding !== true
+    ? options.encoding
+    : 'utf-8'
 
   // convert the limit to an integer
   var limit = null
@@ -65,10 +71,7 @@ module.exports = function (stream, options, done) {
   }
 
   var received = 0
-  // note: we delegate any invalid encodings to the constructor
-  var decoder = options.encoding
-    ? new StringDecoder(options.encoding === true ? 'utf8' : options.encoding)
-    : null
+  var decoder = getDecoder(encoding)
   var buffer = decoder
     ? ''
     : []
@@ -117,7 +120,7 @@ module.exports = function (stream, options, done) {
       done(err)
     } else {
       done(null, decoder
-        ? buffer + decoder.end()
+        ? buffer + (decoder.end() || '')
         : Buffer.concat(buffer)
       )
     }
@@ -132,6 +135,19 @@ module.exports = function (stream, options, done) {
     stream.removeListener('end', onEnd)
     stream.removeListener('error', onEnd)
     stream.removeListener('close', cleanup)
+  }
+}
+
+function getDecoder(encoding) {
+  if (!encoding) return null
+
+  try {
+    return iconv.getCodec(encoding).decoder()
+  } catch (e) {
+    var err = makeError('specified encoding unsupported', 'encoding.unsupported')
+    err.status = err.statusCode = 415
+    err.encoding = encoding
+    throw err
   }
 }
 

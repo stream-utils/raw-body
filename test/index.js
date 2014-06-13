@@ -12,16 +12,6 @@ var file = path.join(__dirname, 'index.js')
 var length = fs.statSync(file).size
 var string = fs.readFileSync(file, 'utf8')
 
-function createStream() {
-  return fs.createReadStream(file)
-}
-
-function checkBuffer(buf) {
-  assert.ok(Buffer.isBuffer(buf))
-  assert.equal(buf.length, length)
-  assert.equal(buf.toString('utf8'), string)
-}
-
 describe('Raw Body', function () {
   it('should work without any options', function (done) {
     getRawBody(createStream(), function (err, buf) {
@@ -228,11 +218,17 @@ describe('Raw Body', function () {
   })
 
   it('should throw when given an invalid encoding', function () {
-    assert.throws(function () {
+    var err
+    try {
       getRawBody(new Readable(), {
         encoding: 'akljsdflkajsdf'
       }, function () {})
-    })
+    } catch (e) {
+      err = e
+    }
+    assert.ok(err)
+    assert.ok(/encoding/.test(err.message))
+    assert.equal(err.status, 415)
   })
 
   describe('when an encoding is set', function () {
@@ -256,10 +252,47 @@ describe('Raw Body', function () {
       })
     })
 
+    it('should handle encoding as options string', function (done) {
+      getRawBody(createStream(), 'utf8', function (err, str) {
+        assert.ifError(err)
+        assert.equal(str, string)
+        done()
+      })
+    })
+
+    it('should decode codepage string', function (done) {
+      var stream = createStream(new Buffer('bf43f36d6f20657374e1733f', 'hex'))
+      var string = '¿Cómo estás?'
+      getRawBody(stream, 'iso-8859-1', function (err, str) {
+        assert.ifError(err)
+        assert.equal(str, string)
+        done()
+      })
+    })
+
+    it('should decode UTF-8 string', function (done) {
+      var stream = createStream(new Buffer('c2bf43c3b36d6f20657374c3a1733f', 'hex'))
+      var string = '¿Cómo estás?'
+      getRawBody(stream, 'utf-8', function (err, str) {
+        assert.ifError(err)
+        assert.equal(str, string)
+        done()
+      })
+    })
+
+    it('should decode UTF-16LE string', function (done) {
+      // UTF-16LE is different from UTF-16 due to BOM behavior
+      var stream = createStream(new Buffer('bf004300f3006d006f002000650073007400e10073003f00', 'hex'))
+      var string = '¿Cómo estás?'
+      getRawBody(stream, 'utf-16le', function (err, str) {
+        assert.ifError(err)
+        assert.equal(str, string)
+        done()
+      })
+    })
+
     it('should correctly calculate the expected length', function (done) {
-      var stream = new Readable()
-      stream.push('{"test":"å"}')
-      stream.push(null)
+      var stream = createStream(new Buffer('{"test":"å"}'))
 
       getRawBody(stream, {
         encoding: 'utf8',
@@ -354,3 +387,21 @@ describe('Raw Body', function () {
     })
   })
 })
+
+function checkBuffer(buf) {
+  assert.ok(Buffer.isBuffer(buf))
+  assert.equal(buf.length, length)
+  assert.equal(buf.toString('utf8'), string)
+}
+
+function createStream(buf) {
+  if (!buf) return fs.createReadStream(file)
+
+  var stream = new Readable()
+  stream._read = function () {
+    stream.push(buf)
+    stream.push(null)
+  }
+
+  return stream
+}

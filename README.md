@@ -12,12 +12,13 @@ Ideal for parsing request bodies.
 
 ```js
 var getRawBody = require('raw-body')
+var typer      = require('media-typer')
 
 app.use(function (req, res, next) {
   getRawBody(req, {
     length: req.headers['content-length'],
     limit: '1mb',
-    encoding: 'utf8'
+    encoding: typer.parse(req.headers['content-type']).parameters.charset
   }, function (err, string) {
     if (err)
       return next(err)
@@ -35,7 +36,7 @@ app.use(function* (next) {
   var string = yield getRawBody(this.req, {
     length: this.length,
     limit: '1mb',
-    encoding: 'utf8'
+    encoding: this.charset
   })
 })
 ```
@@ -55,8 +56,9 @@ Options:
 - `encoding` - The requested encoding.
   By default, a `Buffer` instance will be returned.
   Most likely, you want `utf8`.
-  You can use any type of encoding supported by [StringDecoder](http://nodejs.org/api/string_decoder.html).
-  You can also pass `true` which sets it to the default `utf8`
+  You can use any type of encoding supported by [iconv-lite](https://www.npmjs.org/package/iconv-lite#readme).
+
+You can also pass a string in place of options to just specify the encoding.
 
 `callback(err, res)`:
 
