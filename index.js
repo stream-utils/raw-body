@@ -1,5 +1,7 @@
-var StringDecoder = require('string_decoder').StringDecoder
 var bytes = require('bytes')
+
+// NOTE: the trailing slash is not a typo
+var StringDecoder = require('string_decoder/').StringDecoder
 
 module.exports = function (stream, options, done) {
   if (typeof options === 'function') {
@@ -115,7 +117,7 @@ module.exports = function (stream, options, done) {
       done(err)
     } else {
       done(null, decoder
-        ? buffer + endStringDecoder(decoder)
+        ? buffer + decoder.end()
         : Buffer.concat(buffer)
       )
     }
@@ -146,23 +148,4 @@ function makeError(message, type) {
     configurable: true
   })
   return error
-}
-
-// https://github.com/Raynos/body/blob/2512ced39e31776e5a2f7492b907330badac3a40/index.js#L72
-// bug fix for missing `StringDecoder.end` in v0.8.x
-function endStringDecoder(decoder) {
-    if (decoder.end) {
-        return decoder.end()
-    }
-
-    var res = ""
-
-    if (decoder.charReceived) {
-        var cr = decoder.charReceived
-        var buf = decoder.charBuffer
-        var enc = decoder.encoding
-        res += buf.slice(0, cr).toString(enc)
-    }
-
-    return res
 }

@@ -6,7 +6,8 @@
   "license": "MIT",
   "repository": "stream-utils/raw-body",
   "dependencies": {
-    "bytes": "1"
+    "bytes": "1",
+    "string_decoder": "0.10"
   },
   "devDependencies": {
     "istanbul": "0.2.10",
