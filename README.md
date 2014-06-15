@@ -67,8 +67,9 @@ You can also pass a string in place of options to just specify the encoding.
     - `limit` - the limit in bytes
     - `length` and `expected` - the expected length of the stream
     - `received` - the received bytes
+    - `encoding` - the invalid encoding
     - `status` and `statusCode` - the corresponding status code for the error
-    - `type` - either `entity.too.large`, `request.size.invalid`, or `stream.encoding.set`
+    - `type` - either `entity.too.large`, `request.size.invalid`, `stream.encoding.set`, or `encoding.unsupported`
 
 - `res` - the result, either as a `String` if an encoding was set or a `Buffer` otherwise.
 
