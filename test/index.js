@@ -280,6 +280,28 @@ describe('Raw Body', function () {
       })
     })
 
+    it('should decode UTF-16 string (LE BOM)', function (done) {
+      // BOM makes this LE
+      var stream = createStream(new Buffer('fffebf004300f3006d006f002000650073007400e10073003f00', 'hex'))
+      var string = '¿Cómo estás?'
+      getRawBody(stream, 'utf-16', function (err, str) {
+        assert.ifError(err)
+        assert.equal(str, string)
+        done()
+      })
+    })
+
+    it('should decode UTF-16 string (BE BOM)', function (done) {
+      // BOM makes this BE
+      var stream = createStream(new Buffer('feff00bf004300f3006d006f002000650073007400e10073003f', 'hex'))
+      var string = '¿Cómo estás?'
+      getRawBody(stream, 'utf-16', function (err, str) {
+        assert.ifError(err)
+        assert.equal(str, string)
+        done()
+      })
+    })
+
     it('should decode UTF-16LE string', function (done) {
       // UTF-16LE is different from UTF-16 due to BOM behavior
       var stream = createStream(new Buffer('bf004300f3006d006f002000650073007400e10073003f00', 'hex'))
