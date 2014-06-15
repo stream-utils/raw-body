@@ -1,5 +1,5 @@
-unreleased
-==========
+1.2.1 / 2014-06-15
+==================
 
   * deps: iconv-lite@0.4.3
     - Added encodings UTF-16BE and UTF-16 with BOM
