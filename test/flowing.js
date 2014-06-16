@@ -21,7 +21,7 @@ describe('stream flowing', function () {
         assert.equal(err.length, defaultLimit * 2)
         assert.equal(err.limit, defaultLimit)
         assert.equal(body, undefined)
-        assert.ok(!stream.flowing)
+        assert.ok(stream.isPaused)
 
         done()
       })
@@ -40,7 +40,7 @@ describe('stream flowing', function () {
         assert.equal(err.type, 'stream.encoding.set')
         assert.equal(err.message, 'stream encoding should not be set')
         assert.equal(err.statusCode, 500)
-        assert.ok(!stream.flowing)
+        assert.ok(stream.isPaused)
 
         done()
       })
@@ -59,7 +59,7 @@ describe('stream flowing', function () {
         assert.equal(err.statusCode, 413)
         assert.ok(err.received > defaultLimit)
         assert.equal(err.limit, defaultLimit)
-        assert.ok(!stream.flowing)
+        assert.ok(stream.isPaused)
 
         done()
       })
@@ -73,7 +73,7 @@ describe('stream flowing', function () {
       getRawBody(stream, function (err, body) {
         assert.ok(err)
         assert.equal(err.message, 'BOOM')
-        assert.ok(!stream.flowing)
+        assert.ok(stream.isPaused)
 
         done()
       })
@@ -119,6 +119,11 @@ function createInfiniteStream() {
       }
     }, 100)
   }
+
+  // track paused state for tests
+  stream.isPaused = false
+  stream.on('pause', function () { this.isPaused = true })
+  stream.on('resume', function () { this.isPaused = false })
 
   // immediately put the stream in flowing mode
   stream.resume()
