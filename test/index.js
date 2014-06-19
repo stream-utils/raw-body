@@ -218,17 +218,15 @@ describe('Raw Body', function () {
   })
 
   it('should throw when given an invalid encoding', function () {
-    var err
-    try {
-      getRawBody(new Readable(), {
-        encoding: 'akljsdflkajsdf'
-      }, function () {})
-    } catch (e) {
-      err = e
-    }
-    assert.ok(err)
-    assert.ok(/encoding/.test(err.message))
-    assert.equal(err.status, 415)
+    var stream = new Readable()
+    stream.push('akl;sdjfklajsdfkljasdf')
+    stream.push(null)
+
+    getRawBody(stream, 'akljsdflkajsdf', function (err) {
+      assert.ok(err)
+      assert.ok(/encoding/.test(err.message))
+      assert.equal(err.status, 415)
+    })
   })
 
   describe('when an encoding is set', function () {

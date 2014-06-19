@@ -71,7 +71,20 @@ module.exports = function (stream, options, done) {
   }
 
   var received = 0
-  var decoder = getDecoder(encoding)
+  var decoder
+
+  try {
+    decoder = getDecoder(encoding)
+  } catch (err) {
+    if (typeof stream.pause === 'function')
+      stream.pause()
+
+    process.nextTick(function () {
+      done(err)
+    })
+    return defer
+  }
+
   var buffer = decoder
     ? ''
     : []

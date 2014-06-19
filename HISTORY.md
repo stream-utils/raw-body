@@ -1,3 +1,8 @@
+unreleased
+==========
+
+  * Send invalid encoding error to callback
+
 1.2.1 / 2014-06-15
 ==================
 
