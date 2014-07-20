@@ -1,5 +1,5 @@
-unreleased
-==========
+1.2.3 / 2014-07-20
+==================
 
   * deps: iconv-lite@0.4.4
     - Added encoding UTF-7
