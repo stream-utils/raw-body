@@ -1,5 +1,6 @@
 var assert = require('assert')
 var Readable = require('readable-stream').Readable
+var Writable = require('readable-stream').Writable
 
 var getRawBody = require('../')
 
@@ -23,6 +24,27 @@ describe('stream flowing', function () {
         assert.equal(body, undefined)
         assert.ok(stream.isPaused)
 
+        done()
+      })
+    })
+
+    it('should halt flowing stream', function (done) {
+      var stream = createInfiniteStream(true)
+      var dest = createBlackholeStream()
+
+      // pipe the stream
+      stream.pipe(dest)
+
+      getRawBody(stream, {
+        limit: defaultLimit * 2,
+        length: defaultLimit
+      }, function (err, body) {
+        assert.ok(err)
+        assert.equal(err.type, 'entity.too.large')
+        assert.equal(err.message, 'request entity too large')
+        assert.equal(err.statusCode, 413)
+        assert.equal(body, undefined)
+        assert.ok(stream.isPaused)
         done()
       })
     })
@@ -108,7 +130,16 @@ function createChunk() {
   }
 }
 
-function createInfiniteStream() {
+function createBlackholeStream() {
+  var stream = new Writable()
+  stream._write = function (chunk, encoding, cb) {
+    cb()
+  }
+
+  return stream
+}
+
+function createInfiniteStream(paused) {
   var stream = new Readable()
   stream._read = function () {
     var rand = 2 + Math.floor(Math.random() * 10)
@@ -126,7 +157,9 @@ function createInfiniteStream() {
   stream.on('resume', function () { this.isPaused = false })
 
   // immediately put the stream in flowing mode
-  stream.resume()
+  if (!paused) {
+    stream.resume()
+  }
 
   return stream
 }

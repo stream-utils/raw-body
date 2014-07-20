@@ -1,3 +1,9 @@
+unreleased
+==========
+
+  * Fully unpipe the stream on error
+    - Fixes `Cannot switch to old mode now` error on Node.js 0.10+
+
 1.2.3 / 2014-07-20
 ==================
 

@@ -37,14 +37,13 @@ module.exports = function (stream, options, done) {
   // note: we intentionally leave the stream paused,
   // so users should handle the stream themselves.
   if (limit !== null && length !== null && length > limit) {
-    if (typeof stream.pause === 'function')
-      stream.pause()
-
+    var err = makeError('request entity too large', 'entity.too.large')
+    err.status = err.statusCode = 413
+    err.length = err.expected = length
+    err.limit = limit
+    cleanup()
+    halt(stream)
     process.nextTick(function () {
-      var err = makeError('request entity too large', 'entity.too.large')
-      err.status = err.statusCode = 413
-      err.length = err.expected = length
-      err.limit = limit
       done(err)
     })
     return defer
@@ -57,14 +56,13 @@ module.exports = function (stream, options, done) {
   //   state.decoder: streams2, specifically < 0.10.6
   var state = stream._readableState
   if (stream._decoder || (state && (state.encoding || state.decoder))) {
-    if (typeof stream.pause === 'function')
-      stream.pause()
-
+    // developer error
+    var err = makeError('stream encoding should not be set',
+      'stream.encoding.set')
+    err.status = err.statusCode = 500
+    cleanup()
+    halt(stream)
     process.nextTick(function () {
-      var err = makeError('stream encoding should not be set',
-        'stream.encoding.set')
-      // developer error
-      err.status = err.statusCode = 500
       done(err)
     })
     return defer
@@ -76,9 +74,8 @@ module.exports = function (stream, options, done) {
   try {
     decoder = getDecoder(encoding)
   } catch (err) {
-    if (typeof stream.pause === 'function')
-      stream.pause()
-
+    cleanup()
+    halt(stream)
     process.nextTick(function () {
       done(err)
     })
@@ -108,21 +105,20 @@ module.exports = function (stream, options, done) {
       : buffer.push(chunk)
 
     if (limit !== null && received > limit) {
-      if (typeof stream.pause === 'function')
-        stream.pause()
       var err = makeError('request entity too large', 'entity.too.large')
       err.status = err.statusCode = 413
       err.received = received
       err.limit = limit
-      done(err)
       cleanup()
+      halt(stream)
+      done(err)
     }
   }
 
   function onEnd(err) {
     if (err) {
-      if (typeof stream.pause === 'function')
-        stream.pause()
+      cleanup()
+      halt(stream)
       done(err)
     } else if (length !== null && received !== length) {
       err = makeError('request size did not match content length',
@@ -130,15 +126,15 @@ module.exports = function (stream, options, done) {
       err.status = err.statusCode = 400
       err.received = received
       err.length = err.expected = length
+      cleanup()
       done(err)
     } else {
-      done(null, decoder
+      var string = decoder
         ? buffer + (decoder.end() || '')
         : Buffer.concat(buffer)
-      )
+      cleanup()
+      done(null, string)
     }
-
-    cleanup()
   }
 
   function cleanup() {
@@ -164,6 +160,23 @@ function getDecoder(encoding) {
   }
 }
 
+/**
+ * Halt a stream.
+ *
+ * @param {Object} stream
+ * @api private
+ */
+
+function halt(stream) {
+  // unpipe everything from the stream
+  unpipe(stream)
+
+  // pause stream
+  if (typeof stream.pause === 'function') {
+    stream.pause()
+  }
+}
+
 // to create serializable errors you must re-set message so
 // that it is enumerable and you must re configure the type
 // property so that is writable and enumerable
@@ -177,4 +190,35 @@ function makeError(message, type) {
     configurable: true
   })
   return error
+}
+
+/**
+ * Unpipe everything from a stream.
+ *
+ * @param {Object} stream
+ * @api private
+ */
+
+/* istanbul ignore next: implementation differs between versions */
+function unpipe(stream) {
+  if (typeof stream.unpipe === 'function') {
+    // new-style
+    stream.unpipe()
+    return
+  }
+
+  // Node.js 0.8 hack
+  var listener
+  var listeners = stream.listeners('close')
+
+  for (var i = 0; i < listeners.length; i++) {
+    listener = listeners[i]
+
+    if (listener.name !== 'cleanup' && listener.name !== 'onclose') {
+      continue
+    }
+
+    // invoke the listener
+    listener.call(stream)
+  }
 }

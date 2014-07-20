@@ -73,7 +73,7 @@ You can also pass a string in place of options to just specify the encoding.
 
 - `res` - the result, either as a `String` if an encoding was set or a `Buffer` otherwise.
 
-If an error occurs, the stream will be paused,
+If an error occurs, the stream will be paused, everything unpiped,
 and you are responsible for correctly disposing the stream.
 For HTTP requests, no handling is required if you send a response.
 For streams that use file descriptors, you should `stream.destroy()` or `stream.close()` to prevent leaks.
