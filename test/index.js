@@ -3,7 +3,6 @@ var fs = require('fs')
 var path = require('path')
 var http = require('http')
 var through = require('through2')
-var request = require('request')
 var Readable = require('readable-stream').Readable
 
 var getRawBody = require('../')
@@ -342,12 +341,10 @@ describe('Raw Body', function () {
   })
 
   describe('when using with http server', function () {
-    var PORT = 10000 + Math.floor(Math.random() * 20000)
-    var uri = 'http://localhost:' + PORT
-    var server = http.createServer()
+    var server
 
     before(function (done) {
-      server.on('request', function (req, res) {
+      server = http.createServer(function onRequest(req, res) {
         if (req.headers['x-req-encoding']) {
           req.setEncoding(req.headers['x-req-encoding']);
         }
@@ -364,46 +361,48 @@ describe('Raw Body', function () {
         })
       })
 
-      server.listen(PORT, done)
-    })
-
-    it('should echo data', function (done) {
-      var resp = createStream().pipe(request({
-        uri: uri,
-        method: 'POST'
-      }))
-
-      getRawBody(resp, {
-        encoding: true
-      }, function (err, str) {
-        assert.ifError(err)
-        assert.equal(str, string)
-
-        done()
-      })
-    })
-
-    it('should throw if stream encoding is set', function (done) {
-      var resp = createStream().pipe(request({
-        uri: uri,
-        method: 'POST',
-        headers: {
-          'x-req-encoding': 'utf8'
-        }
-      }))
-
-      getRawBody(resp, {
-        encoding: true
-      }, function (err, str) {
-        assert.ifError(err)
-        assert.equal(str, 'stream encoding should not be set')
-
-        done()
-      })
+      server.listen(done)
     })
 
     after(function (done) {
       server.close(done)
+    })
+
+    it('should echo data', function (done) {
+      var addr = server.address()
+      var client = http.request({method: 'POST', port: addr.port})
+
+      createStream().pipe(client)
+
+      client.on('response', function onResponse(res) {
+        getRawBody(res, {
+          encoding: true
+        }, function (err, str) {
+          assert.ifError(err)
+          assert.equal(str, string)
+
+          done()
+        })
+      })
+    })
+
+    it('should throw if stream encoding is set', function (done) {
+      var addr = server.address()
+      var headers = {'x-req-encoding': 'utf8'}
+      var client = http.request({headers: headers, method: 'POST', port: addr.port})
+
+      createStream().pipe(client)
+
+      client.on('response', function onResponse(res) {
+        getRawBody(res, {
+          encoding: true
+        }, function (err, str) {
+          assert.ifError(err)
+          assert.equal(str, 'stream encoding should not be set')
+
+          done()
+        })
+      })
     })
   })
 })
