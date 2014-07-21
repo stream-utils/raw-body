@@ -1,7 +1,7 @@
 {
   "name": "raw-body",
   "description": "Get and validate the raw body of a readable stream.",
-  "version": "1.2.3",
+  "version": "1.3.0",
   "author": "Jonathan Ong <me@jongleberry.com> (http://jongleberry.com)",
   "contributors": [
     "Douglas Christopher Wilson <doug@somethingdoug.com>",
