@@ -16,7 +16,7 @@
   "devDependencies": {
     "istanbul": "0.3.2",
     "mocha": "~2.0.1",
-    "readable-stream": "~1.0.17",
+    "readable-stream": "~1.0.33",
     "through2": "0.6.3"
   },
   "engines": {
