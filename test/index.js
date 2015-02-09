@@ -353,6 +353,7 @@ describe('Raw Body', function () {
           length: req.headers['content-length']
         }, function (err, body) {
           if (err) {
+            req.resume()
             res.statusCode = 500
             return res.end(err.message)
           }
