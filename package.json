@@ -11,7 +11,7 @@
   "repository": "stream-utils/raw-body",
   "dependencies": {
     "bytes": "1.0.0",
-    "iconv-lite": "0.4.6"
+    "iconv-lite": "0.4.7"
   },
   "devDependencies": {
     "istanbul": "0.3.5",

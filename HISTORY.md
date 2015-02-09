@@ -1,3 +1,9 @@
+unreleased
+==========
+
+  * deps: iconv-lite@0.4.7
+    - Gracefully support enumerables on `Object.prototype`
+
 1.3.2 / 2015-01-20
 ==================
 
