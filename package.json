@@ -22,6 +22,12 @@
   "engines": {
     "node": ">= 0.8.0"
   },
+  "files": [
+    "HISTORY.md",
+    "LICENSE",
+    "README.md",
+    "index.js"
+  ],
   "scripts": {
     "test": "mocha --reporter spec --bail test/",
     "test-cov": "istanbul cover node_modules/mocha/bin/_mocha -- --reporter dot test/",
