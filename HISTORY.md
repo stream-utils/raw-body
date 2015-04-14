@@ -1,3 +1,8 @@
+unreleased
+==========
+
+  * Fix hanging callback if request aborts during read
+
 1.3.3 / 2015-02-08
 ==================
 

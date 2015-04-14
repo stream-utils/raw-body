@@ -70,7 +70,7 @@ You can also pass a string in place of options to just specify the encoding.
     - `received` - the received bytes
     - `encoding` - the invalid encoding
     - `status` and `statusCode` - the corresponding status code for the error
-    - `type` - either `entity.too.large`, `request.size.invalid`, `stream.encoding.set`, or `encoding.unsupported`
+    - `type` - either `entity.too.large`, `request.aborted`, `request.size.invalid`, `stream.encoding.set`, or `encoding.unsupported`
 
 - `res` - the result, either as a `String` if an encoding was set or a `Buffer` otherwise.
 
