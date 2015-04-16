@@ -2,6 +2,8 @@ unreleased
 ==========
 
   * Fix hanging callback if request aborts during read
+  * deps: iconv-lite@0.4.8
+    - Add encoding alias UNICODE-1-1-UTF-7
 
 1.3.3 / 2015-02-08
 ==================
