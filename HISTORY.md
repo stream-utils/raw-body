@@ -1,5 +1,5 @@
-unreleased
-==========
+1.3.4 / 2015-04-15
+==================
 
   * Fix hanging callback if request aborts during read
   * deps: iconv-lite@0.4.8
