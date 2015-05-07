@@ -1,7 +1,35 @@
+/*!
+ * raw-body
+ * Copyright(c) 2013-2014 Jonathan Ong
+ * Copyright(c) 2014-2015 Douglas Christopher Wilson
+ * MIT Licensed
+ */
+
+/**
+ * Module dependencies.
+ * @private
+ */
+
 var bytes = require('bytes')
 var iconv = require('iconv-lite')
 
-module.exports = function (stream, options, done) {
+/**
+ * Module exports.
+ * @public
+ */
+
+module.exports = getRawBody
+
+/**
+ * Get the raw body of a stream (typically HTTP).
+ *
+ * @param {object} stream
+ * @param {object|string|function} [options]
+ * @param {function} [done]
+ * @public
+ */
+
+function getRawBody(stream, options, done) {
   if (options === true || typeof options === 'string') {
     // short cut for encoding
     options = {
@@ -161,6 +189,13 @@ module.exports = function (stream, options, done) {
   }
 }
 
+/**
+ * Get the decoder for a given encoding.
+ *
+ * @param {string} encoding
+ * @private
+ */
+
 function getDecoder(encoding) {
   if (!encoding) return null
 
@@ -178,7 +213,7 @@ function getDecoder(encoding) {
  * Halt a stream.
  *
  * @param {Object} stream
- * @api private
+ * @private
  */
 
 function halt(stream) {
@@ -210,7 +245,7 @@ function makeError(message, type) {
  * Unpipe everything from a stream.
  *
  * @param {Object} stream
- * @api private
+ * @private
  */
 
 /* istanbul ignore next: implementation differs between versions */
