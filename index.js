@@ -21,175 +21,6 @@ var iconv = require('iconv-lite')
 module.exports = getRawBody
 
 /**
- * Get the raw body of a stream (typically HTTP).
- *
- * @param {object} stream
- * @param {object|string|function} [options]
- * @param {function} [done]
- * @public
- */
-
-function getRawBody(stream, options, done) {
-  if (options === true || typeof options === 'string') {
-    // short cut for encoding
-    options = {
-      encoding: options
-    }
-  }
-
-  options = options || {}
-
-  if (typeof options === 'function') {
-    done = options
-    options = {}
-  }
-
-  // get encoding
-  var encoding = options.encoding !== true
-    ? options.encoding
-    : 'utf-8'
-
-  // convert the limit to an integer
-  var limit = null
-  if (typeof options.limit === 'number')
-    limit = options.limit
-  if (typeof options.limit === 'string')
-    limit = bytes(options.limit)
-
-  // convert the expected length to an integer
-  var length = null
-  if (options.length != null && !isNaN(options.length))
-    length = parseInt(options.length, 10)
-
-  // check the length and limit options.
-  // note: we intentionally leave the stream paused,
-  // so users should handle the stream themselves.
-  if (limit !== null && length !== null && length > limit) {
-    var err = makeError('request entity too large', 'entity.too.large')
-    err.status = err.statusCode = 413
-    err.length = err.expected = length
-    err.limit = limit
-    cleanup()
-    halt(stream)
-    process.nextTick(function () {
-      done(err)
-    })
-    return defer
-  }
-
-  // streams1: assert request encoding is buffer.
-  // streams2+: assert the stream encoding is buffer.
-  //   stream._decoder: streams1
-  //   state.encoding: streams2
-  //   state.decoder: streams2, specifically < 0.10.6
-  var state = stream._readableState
-  if (stream._decoder || (state && (state.encoding || state.decoder))) {
-    // developer error
-    var err = makeError('stream encoding should not be set',
-      'stream.encoding.set')
-    err.status = err.statusCode = 500
-    cleanup()
-    halt(stream)
-    process.nextTick(function () {
-      done(err)
-    })
-    return defer
-  }
-
-  var received = 0
-  var decoder
-
-  try {
-    decoder = getDecoder(encoding)
-  } catch (err) {
-    cleanup()
-    halt(stream)
-    process.nextTick(function () {
-      done(err)
-    })
-    return defer
-  }
-
-  var buffer = decoder
-    ? ''
-    : []
-
-  stream.on('aborted', onAborted)
-  stream.on('data', onData)
-  stream.once('end', onEnd)
-  stream.once('error', onEnd)
-  stream.once('close', cleanup)
-
-  return defer
-
-  // yieldable support
-  function defer(fn) {
-    done = fn
-  }
-
-  function onAborted() {
-    var err = makeError('request aborted', 'request.aborted')
-    err.code = 'ECONNABORTED'
-    err.status = 400
-    err.received = received
-    err.length = err.expected = length
-
-    cleanup()
-    halt(stream)
-    done(err)
-  }
-
-  function onData(chunk) {
-    received += chunk.length
-    decoder
-      ? buffer += decoder.write(chunk)
-      : buffer.push(chunk)
-
-    if (limit !== null && received > limit) {
-      var err = makeError('request entity too large', 'entity.too.large')
-      err.status = err.statusCode = 413
-      err.received = received
-      err.limit = limit
-      cleanup()
-      halt(stream)
-      done(err)
-    }
-  }
-
-  function onEnd(err) {
-    if (err) {
-      cleanup()
-      halt(stream)
-      done(err)
-    } else if (length !== null && received !== length) {
-      err = makeError('request size did not match content length',
-        'request.size.invalid')
-      err.status = err.statusCode = 400
-      err.received = received
-      err.length = err.expected = length
-      cleanup()
-      done(err)
-    } else {
-      var string = decoder
-        ? buffer + (decoder.end() || '')
-        : Buffer.concat(buffer)
-      cleanup()
-      done(null, string)
-    }
-  }
-
-  function cleanup() {
-    received = buffer = null
-
-    stream.removeListener('aborted', onAborted)
-    stream.removeListener('data', onData)
-    stream.removeListener('end', onEnd)
-    stream.removeListener('error', onEnd)
-    stream.removeListener('close', cleanup)
-  }
-}
-
-/**
  * Get the decoder for a given encoding.
  *
  * @param {string} encoding
@@ -210,6 +41,58 @@ function getDecoder(encoding) {
 }
 
 /**
+ * Get the raw body of a stream (typically HTTP).
+ *
+ * @param {object} stream
+ * @param {object|string|function} [options]
+ * @param {function} [callback]
+ * @public
+ */
+
+function getRawBody(stream, options, callback) {
+  var done = callback
+  var opts = options || {}
+
+  if (options === true || typeof options === 'string') {
+    // short cut for encoding
+    opts = {
+      encoding: options
+    }
+  }
+
+  if (typeof options === 'function') {
+    done = options
+    opts = {}
+  }
+
+  // get encoding
+  var encoding = opts.encoding !== true
+    ? opts.encoding
+    : 'utf-8'
+
+  // convert the limit to an integer
+  var limit = typeof opts.limit === 'number' ? opts.limit
+    : typeof opts.limit === 'string' ? bytes(opts.limit)
+    : null
+
+  // convert the expected length to an integer
+  var length = opts.length != null && !isNaN(opts.length)
+    ? parseInt(opts.length, 10)
+    : null
+
+  readStream(stream, encoding, length, limit, function () {
+    done.apply(this, arguments)
+  })
+
+  return defer
+
+  // yieldable support
+  function defer(callback) {
+    done = callback
+  }
+}
+
+/**
  * Halt a stream.
  *
  * @param {Object} stream
@@ -226,19 +109,173 @@ function halt(stream) {
   }
 }
 
-// to create serializable errors you must re-set message so
-// that it is enumerable and you must re configure the type
-// property so that is writable and enumerable
-function makeError(message, type) {
+/**
+ * Make a serializable error object.
+ *
+ * To create serializable errors you must re-set message so
+ * that it is enumerable and you must re configure the type
+ * property so that is writable and enumerable.
+ *
+ * @param {string} message
+ * @param {string} type
+ * @param {object} props
+ * @private
+ */
+
+function makeError(message, type, props) {
   var error = new Error()
+
+  for (var prop in props) {
+    error[prop] = props[prop]
+  }
+
   error.message = message
+
   Object.defineProperty(error, 'type', {
     value: type,
     enumerable: true,
     writable: true,
     configurable: true
   })
+
   return error
+}
+
+/**
+ * Read the data from the stream.
+ *
+ * @param {object} stream
+ * @param {string} encoding
+ * @param {number} length
+ * @param {number} limit
+ * @param {function} callback
+ * @public
+ */
+
+function readStream(stream, encoding, length, limit, callback) {
+  // check the length and limit options.
+  // note: we intentionally leave the stream paused,
+  // so users should handle the stream themselves.
+  if (limit !== null && length !== null && length > limit) {
+    var err = makeError('request entity too large', 'entity.too.large', {
+      expected: length,
+      length: length,
+      limit: limit,
+      status: 413,
+      statusCode: 413
+    })
+
+    return process.nextTick(function () {
+      done(err)
+    })
+  }
+
+  // streams1: assert request encoding is buffer.
+  // streams2+: assert the stream encoding is buffer.
+  //   stream._decoder: streams1
+  //   state.encoding: streams2
+  //   state.decoder: streams2, specifically < 0.10.6
+  var state = stream._readableState
+  if (stream._decoder || (state && (state.encoding || state.decoder))) {
+    // developer error
+    var err = makeError('stream encoding should not be set', 'stream.encoding.set', {
+      status: 500,
+      statusCode: 500
+    })
+
+    return process.nextTick(function () {
+      done(err)
+    })
+  }
+
+  var received = 0
+  var decoder
+
+  try {
+    decoder = getDecoder(encoding)
+  } catch (err) {
+    return process.nextTick(function () {
+      done(err)
+    })
+  }
+
+  var buffer = decoder
+    ? ''
+    : []
+
+  stream.on('aborted', onAborted)
+  stream.on('data', onData)
+  stream.once('end', onEnd)
+  stream.once('error', onEnd)
+  stream.once('close', cleanup)
+
+  function done(err) {
+    cleanup()
+
+    if (err) {
+      // halt the stream on error
+      halt(stream)
+    }
+
+    callback.apply(this, arguments)
+  }
+
+  function onAborted() {
+    done(makeError('request aborted', 'request.aborted', {
+      code: 'ECONNABORTED',
+      expected: length,
+      length: length,
+      received: received,
+      status: 400,
+      statusCode: 400
+    }))
+  }
+
+  function onData(chunk) {
+    received += chunk.length
+    decoder
+      ? buffer += decoder.write(chunk)
+      : buffer.push(chunk)
+
+    if (limit !== null && received > limit) {
+      done(makeError('request entity too large', 'entity.too.large', {
+        limit: limit,
+        received: received,
+        status: 413,
+        statusCode: 413
+      }))
+    }
+  }
+
+  function onEnd(err) {
+    if (err) return done(err)
+
+    if (length !== null && received !== length) {
+      done(makeError('request size did not match content length', 'request.size.invalid', {
+        expected: length,
+        length: length,
+        received: received,
+        status: 400,
+        statusCode: 400
+      }))
+    } else {
+      var string = decoder
+        ? buffer + (decoder.end() || '')
+        : Buffer.concat(buffer)
+      cleanup()
+      done(null, string)
+    }
+  }
+
+  function cleanup() {
+    received = buffer = null
+
+    stream.removeListener('aborted', onAborted)
+    stream.removeListener('data', onData)
+    stream.removeListener('end', onEnd)
+    stream.removeListener('error', onEnd)
+    stream.removeListener('close', cleanup)
+  }
 }
 
 /**
