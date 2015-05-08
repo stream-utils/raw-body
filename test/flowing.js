@@ -6,6 +6,9 @@ var getRawBody = require('../')
 
 var defaultLimit = 1024 * 1024
 
+// Add Promise to mocha's global list
+global.Promise = global.Promise
+
 describe('stream flowing', function () {
   describe('when limit lower then length', function (done) {
     it('should stop the steam flow', function (done) {

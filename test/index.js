@@ -13,6 +13,9 @@ var file = path.join(__dirname, 'index.js')
 var length = fs.statSync(file).size
 var string = fs.readFileSync(file, 'utf8')
 
+// Add Promise to mocha's global list
+global.Promise = global.Promise
+
 describe('Raw Body', function () {
   it('should work without any options', function (done) {
     getRawBody(createStream(), function (err, buf) {
