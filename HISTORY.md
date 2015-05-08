@@ -2,6 +2,8 @@
 ===
 
   * Return a promise without callback instead of thunk
+  * deps: bytes@2.0.1
+    - units no longer case sensitive when parsing
 
 1.3.4 / 2015-04-15
 ==================
