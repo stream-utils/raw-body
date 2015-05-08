@@ -1,5 +1,5 @@
-2.x
-===
+2.0.0 / 2015-05-08
+==================
 
   * Return a promise without callback instead of thunk
   * deps: bytes@2.0.1
