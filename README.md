@@ -2,6 +2,7 @@
 
 [![NPM Version][npm-image]][npm-url]
 [![NPM Downloads][downloads-image]][downloads-url]
+[![Node.js Version][node-version-image]][node-version-url]
 [![Build status][travis-image]][travis-url]
 [![Test coverage][coveralls-image]][coveralls-url]
 
@@ -115,6 +116,8 @@ server.listen(3000)
 
 [npm-image]: https://img.shields.io/npm/v/raw-body.svg
 [npm-url]: https://npmjs.org/package/raw-body
+[node-version-image]: https://img.shields.io/node/v/raw-body.svg
+[node-version-url]: http://nodejs.org/download/
 [travis-image]: https://img.shields.io/travis/stream-utils/raw-body/master.svg
 [travis-url]: https://travis-ci.org/stream-utils/raw-body
 [coveralls-image]: https://img.shields.io/coveralls/stream-utils/raw-body/master.svg
