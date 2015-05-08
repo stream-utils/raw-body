@@ -67,6 +67,16 @@ function getRawBody(stream, options, callback) {
     opts = {}
   }
 
+  // validate callback is a function, if provided
+  if (done !== undefined && typeof done !== 'function') {
+    throw new TypeError('argument callback must be a function')
+  }
+
+  // require the callback without promises
+  if (!done && !global.Promise) {
+    throw new TypeError('argument callback is required')
+  }
+
   // get encoding
   var encoding = opts.encoding !== true
     ? opts.encoding
@@ -82,16 +92,17 @@ function getRawBody(stream, options, callback) {
     ? parseInt(opts.length, 10)
     : null
 
-  readStream(stream, encoding, length, limit, function () {
-    done.apply(this, arguments)
-  })
-
-  return defer
-
-  // yieldable support
-  function defer(callback) {
-    done = callback
+  if (done) {
+    // classic callback style
+    return readStream(stream, encoding, length, limit, done)
   }
+
+  return new Promise(function executor(resolve, reject) {
+    readStream(stream, encoding, length, limit, function onRead(err, buf) {
+      if (err) return reject(err)
+      resolve(buf)
+    })
+  })
 }
 
 /**

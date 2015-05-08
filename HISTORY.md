@@ -1,3 +1,8 @@
+2.x
+===
+
+  * Return a promise without callback instead of thunk
+
 1.3.4 / 2015-04-15
 ==================
 

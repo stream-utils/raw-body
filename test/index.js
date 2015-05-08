@@ -1,12 +1,13 @@
 var assert = require('assert')
 var fs = require('fs')
-var path = require('path')
+var getRawBody = require('..')
 var http = require('http')
 var net = require('net')
+var path = require('path')
 var through = require('through2')
-var Readable = require('readable-stream').Readable
 
-var getRawBody = require('../')
+var Promise = global.Promise || require('bluebird')
+var Readable = require('readable-stream').Readable
 
 var file = path.join(__dirname, 'index.js')
 var length = fs.statSync(file).size
@@ -29,13 +30,10 @@ describe('Raw Body', function () {
     })
   })
 
-  it('should work as a thunk', function (done) {
-    var thunk = getRawBody(createStream())
-    thunk(function (err, buf) {
-      assert.ifError(err)
-      checkBuffer(buf)
-      done()
-    })
+  it('should error for bad callback', function () {
+    assert.throws(function () {
+      getRawBody(createStream(), true, 'silly')
+    }, /argument callback.*function/)
   })
 
   it('should work with length', function (done) {
@@ -114,17 +112,6 @@ describe('Raw Body', function () {
         length: length,
         limit: length - 1
       })
-      done()
-    })
-  })
-
-  it('should work as a thunk when length > limit', function (done) {
-    var thunk = getRawBody(createStream(), {
-      length: length,
-      limit: length - 1
-    })
-    thunk(function (err, buf) {
-      assert.equal(err.status, 413)
       done()
     })
   })
@@ -226,6 +213,63 @@ describe('Raw Body', function () {
       assert.ok(err)
       assert.ok(/encoding/.test(err.message))
       assert.equal(err.status, 415)
+    })
+  })
+
+  describe('with global Promise', function () {
+    before(function () {
+      global.Promise = Promise
+    })
+
+    after(function () {
+      global.Promise = undefined
+    })
+
+    it('should work as a promise', function () {
+      return getRawBody(createStream())
+      .then(checkBuffer)
+    })
+
+    it('should work as a promise when length > limit', function () {
+      return getRawBody(createStream(), {
+        length: length,
+        limit: length - 1
+      })
+      .then(throwExpectedError, function (err) {
+        assert.equal(err.status, 413)
+      })
+    })
+  })
+
+  describe('without global Promise', function () {
+    before(function () {
+      global.Promise = undefined
+    })
+
+    after(function () {
+      global.Promise = Promise
+    })
+
+    it('should error without callback', function () {
+      assert.throws(function () {
+        getRawBody(createStream())
+      }, /argument callback.*required/)
+    })
+
+    it('should work with callback as second argument', function (done) {
+      getRawBody(createStream(), function (err, buf) {
+        assert.ifError(err)
+        checkBuffer(buf)
+        done()
+      })
+    })
+
+    it('should work with callback as third argument', function (done) {
+      getRawBody(createStream(), true, function (err, str) {
+        assert.ifError(err)
+        checkString(str)
+        done()
+      })
     })
   })
 
@@ -446,6 +490,11 @@ function checkBuffer(buf) {
   assert.equal(buf.toString('utf8'), string)
 }
 
+function checkString(str) {
+  assert.ok(typeof str === 'string')
+  assert.equal(str, string)
+}
+
 function createStream(buf) {
   if (!buf) return fs.createReadStream(file)
 
@@ -456,4 +505,8 @@ function createStream(buf) {
   }
 
   return stream
+}
+
+function throwExpectedError() {
+  throw new Error('expected error')
 }

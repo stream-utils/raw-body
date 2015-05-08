@@ -13,38 +13,11 @@ Ideal for parsing request bodies.
 
 ```js
 var getRawBody = require('raw-body')
-var typer      = require('media-typer')
-
-app.use(function (req, res, next) {
-  getRawBody(req, {
-    length: req.headers['content-length'],
-    limit: '1mb',
-    encoding: typer.parse(req.headers['content-type']).parameters.charset
-  }, function (err, string) {
-    if (err)
-      return next(err)
-
-    req.text = string
-    next()
-  })
-})
-```
-
-or in a Koa generator:
-
-```js
-app.use(function* (next) {
-  var string = yield getRawBody(this.req, {
-    length: this.length,
-    limit: '1mb',
-    encoding: this.charset
-  })
-})
 ```
 
 ### getRawBody(stream, [options], [callback])
 
-Returns a thunk for yielding with generators.
+**Returns a promise if no callback specified and global `Promise` exists.**
 
 Options:
 
@@ -78,6 +51,63 @@ If an error occurs, the stream will be paused, everything unpiped,
 and you are responsible for correctly disposing the stream.
 For HTTP requests, no handling is required if you send a response.
 For streams that use file descriptors, you should `stream.destroy()` or `stream.close()` to prevent leaks.
+
+## Examples
+
+### Simple Express example
+
+```js
+var getRawBody = require('raw-body')
+var typer = require('media-typer')
+
+app.use(function (req, res, next) {
+  getRawBody(req, {
+    length: req.headers['content-length'],
+    limit: '1mb',
+    encoding: typer.parse(req.headers['content-type']).parameters.charset
+  }, function (err, string) {
+    if (err) return next(err)
+    req.text = string
+    next()
+  })
+})
+```
+
+### Simple Koa example
+
+```js
+app.use(function* (next) {
+  var string = yield getRawBody(this.req, {
+    length: this.length,
+    limit: '1mb',
+    encoding: this.charset
+  })
+})
+```
+
+### Using as a promise
+
+To use this library as a promise, simply omit the `callback` and a promise is
+returned, provided that a global `Promise` is defined.
+
+```js
+var getRawBody = require('raw-body')
+var http = require('http')
+
+var server = http.createServer(function (req, res) {
+  getRawBody(req)
+  .then(function (buf) {
+    res.statusCode = 200
+    res.end(buf.length + ' bytes submitted')
+  })
+  .catch(function (err) {
+    res.statusCode = 500
+    res.end(err.message)
+  })
+})
+
+server.listen(3000)
+```
 
 ## License
 
