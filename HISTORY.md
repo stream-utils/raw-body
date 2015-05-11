@@ -1,5 +1,5 @@
-unreleased
-==========
+2.0.1 / 2015-05-10
+==================
 
   * Fix a false-positive when unpiping in Node.js 0.8
 
