@@ -1,3 +1,9 @@
+unreleased
+==========
+
+  * deps: bytes@2.1.0
+    - Slight optimizations
+
 2.0.1 / 2015-05-10
 ==================
 

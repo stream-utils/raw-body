@@ -83,9 +83,7 @@ function getRawBody(stream, options, callback) {
     : 'utf-8'
 
   // convert the limit to an integer
-  var limit = typeof opts.limit === 'number' ? opts.limit
-    : typeof opts.limit === 'string' ? bytes(opts.limit)
-    : null
+  var limit = bytes.parse(opts.limit)
 
   // convert the expected length to an integer
   var length = opts.length != null && !isNaN(opts.length)
