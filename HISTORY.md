@@ -1,5 +1,5 @@
-unreleased
-==========
+2.0.2 / 2015-05-21
+==================
 
   * deps: bytes@2.1.0
     - Slight optimizations
