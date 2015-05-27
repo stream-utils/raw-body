@@ -14,7 +14,7 @@
     "iconv-lite": "0.4.8"
   },
   "devDependencies": {
-    "bluebird": "2.9.25",
+    "bluebird": "2.9.26",
     "istanbul": "0.3.9",
     "mocha": "2.2.5",
     "readable-stream": "~1.0.33",
