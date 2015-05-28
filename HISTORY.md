@@ -1,3 +1,10 @@
+unreleased
+==========
+
+  * deps: iconv-lite@0.4.10
+    - The encoding UTF-16 without BOM now defaults to UTF-16LE when detection fails
+    - Leading BOM is now removed when decoding
+
 2.0.2 / 2015-05-21
 ==================
 
