@@ -11,7 +11,8 @@
   "repository": "stream-utils/raw-body",
   "dependencies": {
     "bytes": "2.1.0",
-    "iconv-lite": "0.4.10"
+    "iconv-lite": "0.4.10",
+    "unpipe": "1.0.0"
   },
   "devDependencies": {
     "bluebird": "2.9.30",

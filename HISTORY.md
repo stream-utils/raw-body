@@ -1,3 +1,8 @@
+unreleased
+==========
+
+  * Use `unpipe` module for unpiping requests
+
 2.1.0 / 2015-05-28
 ==================
 

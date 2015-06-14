@@ -14,6 +14,7 @@
 
 var bytes = require('bytes')
 var iconv = require('iconv-lite')
+var unpipe = require('unpipe')
 
 /**
  * Module exports.
@@ -118,23 +119,6 @@ function halt(stream) {
   if (typeof stream.pause === 'function') {
     stream.pause()
   }
-}
-
-/**
- * Determine if there are Node.js pipe-like data listeners.
- */
-
-/* istanbul ignore next: implementation differs between versions */
-function hasPipeDataListeners(stream) {
-  var listeners = stream.listeners('data')
-
-  for (var i = 0; i < listeners.length; i++) {
-    if (listeners[i].name === 'ondata') {
-      return true
-    }
-  }
-
-  return false
 }
 
 /**
@@ -303,40 +287,5 @@ function readStream(stream, encoding, length, limit, callback) {
     stream.removeListener('end', onEnd)
     stream.removeListener('error', onEnd)
     stream.removeListener('close', cleanup)
-  }
-}
-
-/**
- * Unpipe everything from a stream.
- *
- * @param {Object} stream
- * @private
- */
-
-/* istanbul ignore next: implementation differs between versions */
-function unpipe(stream) {
-  if (typeof stream.unpipe === 'function') {
-    // new-style
-    stream.unpipe()
-    return
-  }
-
-  // Node.js 0.8 hack
-  if (!hasPipeDataListeners(stream)) {
-    return
-  }
-
-  var listener
-  var listeners = stream.listeners('close')
-
-  for (var i = 0; i < listeners.length; i++) {
-    listener = listeners[i]
-
-    if (listener.name !== 'cleanup' && listener.name !== 'onclose') {
-      continue
-    }
-
-    // invoke the listener
-    listener.call(stream)
   }
 }
