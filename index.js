@@ -36,10 +36,11 @@ function getDecoder(encoding) {
   try {
     return iconv.getDecoder(encoding)
   } catch (e) {
-    var err = makeError('specified encoding unsupported', 'encoding.unsupported')
-    err.status = err.statusCode = 415
-    err.encoding = encoding
-    throw err
+    throw makeError('specified encoding unsupported', 'encoding.unsupported', {
+      encoding: encoding,
+      status: 415,
+      statusCode: 415
+    })
   }
 }
 
