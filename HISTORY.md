@@ -1,3 +1,9 @@
+unreleased
+==========
+
+  * deps: iconv-lite@0.4.11
+    - Add encoding CESU-8
+
 2.1.1 / 2015-06-14
 ==================
 
