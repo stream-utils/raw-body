@@ -1,5 +1,5 @@
-unreleased
-==========
+2.1.2 / 2015-07-05
+==================
 
   * Fix error stack traces to skip `makeError`
   * deps: iconv-lite@0.4.11
