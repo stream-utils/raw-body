@@ -138,12 +138,18 @@ function halt(stream) {
 function makeError(message, type, props) {
   var error = new Error()
 
+  // capture stack trace
+  Error.captureStackTrace(error, makeError)
+
+  // set free-form properties
   for (var prop in props) {
     error[prop] = props[prop]
   }
 
+  // set message
   error.message = message
 
+  // set type
   Object.defineProperty(error, 'type', {
     value: type,
     enumerable: true,

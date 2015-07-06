@@ -1,6 +1,7 @@
 unreleased
 ==========
 
+  * Fix error stack traces to skip `makeError`
   * deps: iconv-lite@0.4.11
     - Add encoding CESU-8
 
