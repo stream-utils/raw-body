@@ -15,7 +15,7 @@
     "unpipe": "1.0.0"
   },
   "devDependencies": {
-    "bluebird": "2.9.32",
+    "bluebird": "2.9.34",
     "istanbul": "0.3.17",
     "mocha": "2.2.5",
     "readable-stream": "2.0.2",
