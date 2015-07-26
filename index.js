@@ -36,10 +36,8 @@ function getDecoder(encoding) {
   try {
     return iconv.getDecoder(encoding)
   } catch (e) {
-    throw makeError('specified encoding unsupported', 'encoding.unsupported', {
-      encoding: encoding,
-      status: 415,
-      statusCode: 415
+    throw createError(415, 'specified encoding unsupported', 'encoding.unsupported', {
+      encoding: encoding
     })
   }
 }
@@ -129,17 +127,18 @@ function halt(stream) {
  * that it is enumerable and you must re configure the type
  * property so that is writable and enumerable.
  *
+ * @param {number} status
  * @param {string} message
  * @param {string} type
  * @param {object} props
  * @private
  */
 
-function makeError(message, type, props) {
+function createError(status, message, type, props) {
   var error = new Error()
 
   // capture stack trace
-  Error.captureStackTrace(error, makeError)
+  Error.captureStackTrace(error, createError)
 
   // set free-form properties
   for (var prop in props) {
@@ -148,6 +147,10 @@ function makeError(message, type, props) {
 
   // set message
   error.message = message
+
+  // set status
+  error.status = status
+  error.statusCode = status
 
   // set type
   Object.defineProperty(error, 'type', {
@@ -176,12 +179,10 @@ function readStream(stream, encoding, length, limit, callback) {
   // note: we intentionally leave the stream paused,
   // so users should handle the stream themselves.
   if (limit !== null && length !== null && length > limit) {
-    var err = makeError('request entity too large', 'entity.too.large', {
+    var err = createError(413, 'request entity too large', 'entity.too.large', {
       expected: length,
       length: length,
-      limit: limit,
-      status: 413,
-      statusCode: 413
+      limit: limit
     })
 
     return process.nextTick(function () {
@@ -197,10 +198,7 @@ function readStream(stream, encoding, length, limit, callback) {
   var state = stream._readableState
   if (stream._decoder || (state && (state.encoding || state.decoder))) {
     // developer error
-    var err = makeError('stream encoding should not be set', 'stream.encoding.set', {
-      status: 500,
-      statusCode: 500
-    })
+    var err = createError(500, 'stream encoding should not be set', 'stream.encoding.set')
 
     return process.nextTick(function () {
       done(err)
@@ -240,13 +238,11 @@ function readStream(stream, encoding, length, limit, callback) {
   }
 
   function onAborted() {
-    done(makeError('request aborted', 'request.aborted', {
+    done(createError(400, 'request aborted', 'request.aborted', {
       code: 'ECONNABORTED',
       expected: length,
       length: length,
-      received: received,
-      status: 400,
-      statusCode: 400
+      received: received
     }))
   }
 
@@ -257,11 +253,9 @@ function readStream(stream, encoding, length, limit, callback) {
       : buffer.push(chunk)
 
     if (limit !== null && received > limit) {
-      done(makeError('request entity too large', 'entity.too.large', {
+      done(createError(413, 'request entity too large', 'entity.too.large', {
         limit: limit,
-        received: received,
-        status: 413,
-        statusCode: 413
+        received: received
       }))
     }
   }
@@ -270,12 +264,10 @@ function readStream(stream, encoding, length, limit, callback) {
     if (err) return done(err)
 
     if (length !== null && received !== length) {
-      done(makeError('request size did not match content length', 'request.size.invalid', {
+      done(createError(400, 'request size did not match content length', 'request.size.invalid', {
         expected: length,
         length: length,
-        received: received,
-        status: 400,
-        statusCode: 400
+        received: received
       }))
     } else {
       var string = decoder
