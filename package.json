@@ -18,7 +18,7 @@
     "bluebird": "2.9.32",
     "istanbul": "0.3.17",
     "mocha": "2.2.5",
-    "readable-stream": "2.0.1",
+    "readable-stream": "2.0.2",
     "through2": "2.0.0"
   },
   "engines": {
