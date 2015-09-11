@@ -3,10 +3,10 @@ node_js:
   - "0.8"
   - "0.10"
   - "0.12"
-  - "1.0"
-  - "1.8"
-  - "2.0"
-  - "2.4"
+  - "iojs-1.0"
+  - "iojs-2.0"
+  - "iojs-3.0"
+  - "4.0"
 sudo: false
 before_install:
   # Setup Node.js version-specific dependencies
