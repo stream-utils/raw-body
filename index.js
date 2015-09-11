@@ -221,10 +221,10 @@ function readStream(stream, encoding, length, limit, callback) {
     : []
 
   stream.on('aborted', onAborted)
-  stream.on('data', onData)
   stream.once('end', onEnd)
   stream.once('error', onEnd)
   stream.once('close', cleanup)
+  stream.on('data', onData)
 
   function done(err) {
     cleanup()
