@@ -175,19 +175,18 @@ function createError(status, message, type, props) {
  */
 
 function readStream(stream, encoding, length, limit, callback) {
+  var complete = false
+  var sync = true
+
   // check the length and limit options.
   // note: we intentionally leave the stream paused,
   // so users should handle the stream themselves.
   if (limit !== null && length !== null && length > limit) {
-    var err = createError(413, 'request entity too large', 'entity.too.large', {
+    return done(createError(413, 'request entity too large', 'entity.too.large', {
       expected: length,
       length: length,
       limit: limit
-    })
-
-    return process.nextTick(function () {
-      done(err)
-    })
+    }))
   }
 
   // streams1: assert request encoding is buffer.
@@ -198,11 +197,7 @@ function readStream(stream, encoding, length, limit, callback) {
   var state = stream._readableState
   if (stream._decoder || (state && (state.encoding || state.decoder))) {
     // developer error
-    var err = createError(500, 'stream encoding should not be set', 'stream.encoding.set')
-
-    return process.nextTick(function () {
-      done(err)
-    })
+    return done(createError(500, 'stream encoding should not be set', 'stream.encoding.set'))
   }
 
   var received = 0
@@ -211,33 +206,55 @@ function readStream(stream, encoding, length, limit, callback) {
   try {
     decoder = getDecoder(encoding)
   } catch (err) {
-    return process.nextTick(function () {
-      done(err)
-    })
+    return done(err)
   }
 
   var buffer = decoder
     ? ''
     : []
 
+  // attach listeners
   stream.on('aborted', onAborted)
+  stream.on('close', cleanup)
   stream.on('data', onData)
-  stream.once('end', onEnd)
-  stream.once('error', onEnd)
-  stream.once('close', cleanup)
+  stream.on('end', onEnd)
+  stream.on('error', onEnd)
 
-  function done(err) {
-    cleanup()
+  // mark sync section complete
+  sync = false
 
-    if (err) {
-      // halt the stream on error
-      halt(stream)
+  function done() {
+    var args = new Array(arguments.length)
+
+    // copy arguments
+    for (var i = 0; i < args.length; i++) {
+      args[i] = arguments[i]
     }
 
-    callback.apply(this, arguments)
+    // mark complete
+    complete = true
+
+    if (sync) {
+      process.nextTick(invokeCallback)
+    } else {
+      invokeCallback()
+    }
+
+    function invokeCallback() {
+      cleanup()
+
+      if (args[0]) {
+        // halt the stream on error
+        halt(stream)
+      }
+
+      callback.apply(null, args)
+    }
   }
 
   function onAborted() {
+    if (complete) return
+
     done(createError(400, 'request aborted', 'request.aborted', {
       code: 'ECONNABORTED',
       expected: length,
@@ -247,6 +264,8 @@ function readStream(stream, encoding, length, limit, callback) {
   }
 
   function onData(chunk) {
+    if (complete) return
+
     received += chunk.length
     decoder
       ? buffer += decoder.write(chunk)
@@ -261,6 +280,7 @@ function readStream(stream, encoding, length, limit, callback) {
   }
 
   function onEnd(err) {
+    if (complete) return
     if (err) return done(err)
 
     if (length !== null && received !== length) {
@@ -279,7 +299,7 @@ function readStream(stream, encoding, length, limit, callback) {
   }
 
   function cleanup() {
-    received = buffer = null
+    buffer = null
 
     stream.removeListener('aborted', onAborted)
     stream.removeListener('data', onData)
