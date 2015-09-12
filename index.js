@@ -224,6 +224,7 @@ function readStream(stream, encoding, length, limit, callback) {
   stream.once('end', onEnd)
   stream.once('error', onEnd)
   stream.once('close', cleanup)
+  stream.on('data', onData)
 
   process.nextTick(function () {
     // attaching data listener may cause a sync read
