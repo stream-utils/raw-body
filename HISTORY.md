@@ -1,5 +1,5 @@
-unreleased
-==========
+2.1.3 / 2015-09-12
+==================
 
   * Fix sync callback when attaching data listener causes sync read
     - Node.js 0.10 compatibility issue
