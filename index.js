@@ -221,10 +221,14 @@ function readStream(stream, encoding, length, limit, callback) {
     : []
 
   stream.on('aborted', onAborted)
-  stream.on('data', onData)
   stream.once('end', onEnd)
   stream.once('error', onEnd)
   stream.once('close', cleanup)
+
+  process.nextTick(function () {
+    // attaching data listener may cause a sync read
+    stream.on('data', onData)
+  })
 
   function done(err) {
     cleanup()
