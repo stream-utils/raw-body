@@ -1,6 +1,7 @@
 unreleased
 ==========
 
+  * Fix masking critical errors from `iconv-lite`
   * deps: iconv-lite@0.4.12
     - Fix CESU-8 decoding in Node.js 4.x
 
