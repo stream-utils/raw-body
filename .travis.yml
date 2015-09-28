@@ -7,6 +7,9 @@ node_js:
   - "1.8"
   - "2.0"
   - "2.4"
+  - "3.0"
+  - "3.3"
+  - "4.0"
 sudo: false
 before_install:
   # Setup Node.js version-specific dependencies
