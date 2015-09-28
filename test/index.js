@@ -207,15 +207,17 @@ describe('Raw Body', function () {
     })
   })
 
-  it('should throw when given an invalid encoding', function () {
+  it('should throw when given an invalid encoding', function (done) {
     var stream = new Readable()
     stream.push('akl;sdjfklajsdfkljasdf')
     stream.push(null)
 
     getRawBody(stream, 'akljsdflkajsdf', function (err) {
       assert.ok(err)
-      assert.ok(/encoding/.test(err.message))
+      assert.equal(err.message, 'specified encoding unsupported')
       assert.equal(err.status, 415)
+      assert.equal(err.type, 'encoding.unsupported')
+      done()
     })
   })
 
