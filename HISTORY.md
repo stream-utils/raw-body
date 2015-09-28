@@ -1,3 +1,9 @@
+unreleased
+==========
+
+  * deps: iconv-lite@0.4.12
+    - Fix CESU-8 decoding in Node.js 4.x
+
 2.1.3 / 2015-09-12
 ==================
 
