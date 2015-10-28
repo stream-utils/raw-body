@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "bluebird": "2.10.2",
-    "istanbul": "0.3.21",
+    "istanbul": "0.4.0",
     "mocha": "2.2.5",
     "readable-stream": "2.0.2",
     "through2": "2.0.0"
