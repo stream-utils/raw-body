@@ -19,7 +19,7 @@
     "istanbul": "0.4.2",
     "mocha": "2.4.5",
     "readable-stream": "2.0.5",
-    "through2": "2.0.0"
+    "through2": "2.0.1"
   },
   "engines": {
     "node": ">= 0.8"
