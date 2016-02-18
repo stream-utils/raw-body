@@ -1,3 +1,10 @@
+unreleased
+==========
+
+  * deps: bytes@2.3.0
+    - Drop partial bytes on all parsed units
+    - Fix parsing byte string that looks like hex
+
 2.1.5 / 2015-11-30
 ==================
 

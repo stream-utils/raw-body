@@ -10,7 +10,7 @@
   "license": "MIT",
   "repository": "stream-utils/raw-body",
   "dependencies": {
-    "bytes": "2.2.0",
+    "bytes": "2.3.0",
     "iconv-lite": "0.4.13",
     "unpipe": "1.0.0"
   },
