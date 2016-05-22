@@ -37,7 +37,7 @@ run('using native streams', function () {
   })
 })
 
-function createStream(buf) {
+function createStream (buf) {
   var stream = new Readable()
   stream._read = function () {
     stream.push(buf)

@@ -187,6 +187,7 @@ describe('Raw Body', function () {
     getRawBody(stream, {
       length: 13
     }, function (err, buf) {
+      if (err) return done(err)
       assert.ok(buf)
       assert.equal(buf.length, 13)
       done()
@@ -389,18 +390,18 @@ describe('Raw Body', function () {
   })
 })
 
-function checkBuffer(buf) {
+function checkBuffer (buf) {
   assert.ok(Buffer.isBuffer(buf))
   assert.equal(buf.length, length)
   assert.equal(buf.toString('utf8'), string)
 }
 
-function checkString(str) {
+function checkString (str) {
   assert.ok(typeof str === 'string')
   assert.equal(str, string)
 }
 
-function createStream(buf) {
+function createStream (buf) {
   if (!buf) return fs.createReadStream(file)
 
   var stream = new Readable()
@@ -412,6 +413,6 @@ function createStream(buf) {
   return stream
 }
 
-function throwExpectedError() {
+function throwExpectedError () {
   throw new Error('expected error')
 }

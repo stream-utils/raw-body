@@ -110,7 +110,7 @@ describe('stream flowing', function () {
   })
 })
 
-function createChunk() {
+function createChunk () {
   var base = Math.random().toString(32)
   var KB_4 = 32 * 4
   var KB_8 = KB_4 * 2
@@ -128,12 +128,12 @@ function createChunk() {
     return repeat(base, KB_64)
   }
 
-  function repeat(str, num) {
+  function repeat (str, num) {
     return new Array(num + 1).join(str)
   }
 }
 
-function createBlackholeStream() {
+function createBlackholeStream () {
   var stream = new Writable()
   stream._write = function (chunk, encoding, cb) {
     cb()
@@ -142,7 +142,7 @@ function createBlackholeStream() {
   return stream
 }
 
-function createInfiniteStream(paused) {
+function createInfiniteStream (paused) {
   var stream = new Readable()
   stream._read = function () {
     var rand = 2 + Math.floor(Math.random() * 10)
