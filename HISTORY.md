@@ -1,5 +1,5 @@
-unreleased
-==========
+2.1.7 / 2016-06-19
+==================
 
   * deps: bytes@2.4.0
   * perf: remove double-cleanup on happy path
