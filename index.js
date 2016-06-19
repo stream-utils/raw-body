@@ -304,7 +304,6 @@ function readStream (stream, encoding, length, limit, callback) {
       var string = decoder
         ? buffer + (decoder.end() || '')
         : Buffer.concat(buffer)
-      cleanup()
       done(null, string)
     }
   }
