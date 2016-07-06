@@ -58,14 +58,14 @@ For streams that use file descriptors, you should `stream.destroy()` or `stream.
 ### Simple Express example
 
 ```js
+var contentType = require('content-type')
 var getRawBody = require('raw-body')
-var typer = require('media-typer')
 
 app.use(function (req, res, next) {
   getRawBody(req, {
     length: req.headers['content-length'],
     limit: '1mb',
-    encoding: typer.parse(req.headers['content-type']).parameters.charset
+    encoding: contentType.parse(req).parameters.charset
   }, function (err, string) {
     if (err) return next(err)
     req.text = string
@@ -77,14 +77,14 @@ app.use(function (req, res, next) {
 ### Simple Koa example
 
 ```js
+var contentType = require('content-type')
 var getRawBody = require('raw-body')
-var typer = require('media-typer')
 
 app.use(function * (next) {
   this.text = yield getRawBody(this.req, {
     length: this.req.headers['content-length'],
     limit: '1mb',
-    encoding: typer.parse(this.req.headers['content-type']).parameters.charset
+    encoding: contentType.parse(this.req).parameters.charset
   })
   yield next
 })
