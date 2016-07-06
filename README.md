@@ -77,12 +77,16 @@ app.use(function (req, res, next) {
 ### Simple Koa example
 
 ```js
-app.use(function* (next) {
-  var string = yield getRawBody(this.req, {
-    length: this.length,
+var getRawBody = require('raw-body')
+var typer = require('media-typer')
+
+app.use(function * (next) {
+  this.text = yield getRawBody(this.req, {
+    length: this.req.headers['content-length'],
     limit: '1mb',
-    encoding: this.charset
+    encoding: typer.parse(this.req.headers['content-type']).parameters.charset
   })
+  yield next
 })
 ```
 
