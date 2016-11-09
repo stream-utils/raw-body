@@ -26,6 +26,9 @@ Options:
   If the contents of the stream do not add up to this length,
   an `400` error code is returned.
 - `limit` - The byte limit of the body.
+  This is the number of bytes or any string format supported by
+  [bytes](https://www.npmjs.com/package/bytes),
+  for example `1000`, `'500kb'` or `'3mb'`.
   If the body ends up being larger than this limit,
   a `413` error code is returned.
 - `encoding` - The requested encoding.
