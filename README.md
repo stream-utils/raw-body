@@ -28,6 +28,8 @@ Options:
 - `limit` - The byte limit of the body.
   If the body ends up being larger than this limit,
   a `413` error code is returned.
+  You can use any number format supported by [bytes](https://www.npmjs.com/package/bytes),
+  for example `'500kb'` or `'3mb'`.
 - `encoding` - The requested encoding.
   By default, a `Buffer` instance will be returned.
   Most likely, you want `utf8`.
