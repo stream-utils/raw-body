@@ -12,6 +12,8 @@ Ideal for parsing request bodies.
 
 ## API
 
+<!-- eslint-disable no-unused-vars -->
+
 ```js
 var getRawBody = require('raw-body')
 ```
@@ -62,7 +64,10 @@ For streams that use file descriptors, you should `stream.destroy()` or `stream.
 
 ```js
 var contentType = require('content-type')
+var express = require('express')
 var getRawBody = require('raw-body')
+
+var app = express()
 
 app.use(function (req, res, next) {
   getRawBody(req, {
@@ -75,6 +80,8 @@ app.use(function (req, res, next) {
     next()
   })
 })
+
+// now access req.text
 ```
 
 ### Simple Koa example
@@ -82,6 +89,9 @@ app.use(function (req, res, next) {
 ```js
 var contentType = require('content-type')
 var getRawBody = require('raw-body')
+var koa = require('koa')
+
+var app = koa()
 
 app.use(function * (next) {
   this.text = yield getRawBody(this.req, {
@@ -91,6 +101,8 @@ app.use(function * (next) {
   })
   yield next
 })
+
+// now access this.text
 ```
 
 ### Using as a promise
