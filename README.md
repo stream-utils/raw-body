@@ -33,9 +33,9 @@ Options:
   for example `1000`, `'500kb'` or `'3mb'`.
   If the body ends up being larger than this limit,
   a `413` error code is returned.
-- `encoding` - The requested encoding.
-  By default, a `Buffer` instance will be returned.
-  Most likely, you want `utf-8`.
+- `encoding` - The encoding to use to decode the body into a string.
+  By default, a `Buffer` instance will be returned when no encoding is specified.
+  Most likely, you want `utf-8`, so setting `encoding` to `true` will decode as `utf-8`.
   You can use any type of encoding supported by [iconv-lite](https://www.npmjs.org/package/iconv-lite#readme).
 
 You can also pass a string in place of options to just specify the encoding.
