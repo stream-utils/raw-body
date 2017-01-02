@@ -91,7 +91,7 @@ function getRawBody (stream, options, callback) {
   // get encoding
   var encoding = opts.encoding !== true
     ? opts.encoding
-    : 'utf-8'
+    : 'utf8'
 
   // convert the limit to an integer
   var limit = bytes.parse(opts.limit)
