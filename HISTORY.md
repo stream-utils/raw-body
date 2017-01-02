@@ -1,3 +1,14 @@
+unreleased
+==========
+
+  * deps: iconv-lite@0.4.15
+    - Added encoding MS-31J
+    - Added encoding MS-932
+    - Added encoding MS-936
+    - Added encoding MS-949
+    - Added encoding MS-950
+    - Fix GBK/GB18030 handling of Euro character
+
 2.1.7 / 2016-06-19
 ==================
 
