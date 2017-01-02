@@ -35,7 +35,7 @@ Options:
   a `413` error code is returned.
 - `encoding` - The requested encoding.
   By default, a `Buffer` instance will be returned.
-  Most likely, you want `utf8`.
+  Most likely, you want `utf-8`.
   You can use any type of encoding supported by [iconv-lite](https://www.npmjs.org/package/iconv-lite#readme).
 
 You can also pass a string in place of options to just specify the encoding.

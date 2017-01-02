@@ -280,7 +280,7 @@ describe('Raw Body', function () {
   describe('when an encoding is set', function () {
     it('should return a string', function (done) {
       getRawBody(createStream(), {
-        encoding: 'utf8'
+        encoding: 'utf-8'
       }, function (err, str) {
         assert.ifError(err)
         assert.equal(str, string)
@@ -288,7 +288,7 @@ describe('Raw Body', function () {
       })
     })
 
-    it('should handle encoding true', function (done) {
+    it('should handle encoding true as utf-8', function (done) {
       getRawBody(createStream(), {
         encoding: true
       }, function (err, str) {
@@ -299,7 +299,7 @@ describe('Raw Body', function () {
     })
 
     it('should handle encoding as options string', function (done) {
-      getRawBody(createStream(), 'utf8', function (err, str) {
+      getRawBody(createStream(), 'utf-8', function (err, str) {
         assert.ifError(err)
         assert.equal(str, string)
         done()
@@ -363,7 +363,7 @@ describe('Raw Body', function () {
       var stream = createStream(new Buffer('{"test":"å"}'))
 
       getRawBody(stream, {
-        encoding: 'utf8',
+        encoding: 'utf-8',
         length: 13
       }, done)
     })
