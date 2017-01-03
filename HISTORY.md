@@ -1,5 +1,5 @@
-unreleased
-==========
+2.2.0 / 2017-01-02
+==================
 
   * deps: iconv-lite@0.4.15
     - Added encoding MS-31J
