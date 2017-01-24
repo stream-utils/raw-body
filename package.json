@@ -33,6 +33,7 @@
     "HISTORY.md",
     "LICENSE",
     "README.md",
+    "index.d.ts",
     "index.js"
   ],
   "scripts": {
