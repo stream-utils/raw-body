@@ -33,7 +33,8 @@
     "HISTORY.md",
     "LICENSE",
     "README.md",
-    "index.js"
+    "index.js",
+    "index.d.ts"
   ],
   "scripts": {
     "lint": "eslint --plugin markdown --ext js,md .",
