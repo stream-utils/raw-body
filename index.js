@@ -28,7 +28,7 @@ module.exports = getRawBody
  * @private
  */
 
-var iconvEncodingMessageRegExp = /^Encoding not recognized: /
+var ICONV_ENCODING_MESSAGE_REGEXP = /^Encoding not recognized: /
 
 /**
  * Get the decoder for a given encoding.
@@ -44,7 +44,7 @@ function getDecoder (encoding) {
     return iconv.getDecoder(encoding)
   } catch (e) {
     // error getting decoder
-    if (!iconvEncodingMessageRegExp.test(e.message)) throw e
+    if (!ICONV_ENCODING_MESSAGE_REGEXP.test(e.message)) throw e
 
     // the encoding was not found
     throw createError(415, 'specified encoding unsupported', 'encoding.unsupported', {
