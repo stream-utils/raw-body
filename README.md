@@ -40,23 +40,55 @@ Options:
 
 You can also pass a string in place of options to just specify the encoding.
 
-`callback(err, res)`:
-
-- `err` - the following attributes will be defined if applicable:
-
-    - `limit` - the limit in bytes
-    - `length` and `expected` - the expected length of the stream
-    - `received` - the received bytes
-    - `encoding` - the invalid encoding
-    - `status` and `statusCode` - the corresponding status code for the error
-    - `type` - either `entity.too.large`, `request.aborted`, `request.size.invalid`, `stream.encoding.set`, or `encoding.unsupported`
-
-- `res` - the result, either as a `String` if an encoding was set or a `Buffer` otherwise.
-
 If an error occurs, the stream will be paused, everything unpiped,
 and you are responsible for correctly disposing the stream.
 For HTTP requests, no handling is required if you send a response.
 For streams that use file descriptors, you should `stream.destroy()` or `stream.close()` to prevent leaks.
+
+## Errors
+
+This module creates errors depending on the error condition during reading.
+The error may be an error from the underlying Node.js implementation, but is
+otherwise an error created by this module, which has the following attributes:
+
+  * `limit` - the limit in bytes
+  * `length` and `expected` - the expected length of the stream
+  * `received` - the received bytes
+  * `encoding` - the invalid encoding
+  * `status` and `statusCode` - the corresponding status code for the error
+  * `type` - the error type
+
+### Types
+
+The errors from this module have a `type` property which allows for the progamatic
+determination of the type of error returned.
+
+#### encoding.unsupported
+
+This error will occur when the `encoding` option is specified, but the value does
+not map to an encoding supported by the [iconv-lite](https://www.npmjs.org/package/iconv-lite#readme)
+module.
+
+#### entity.too.large
+
+This error will occur when the `limit` option is specified, but the stream has
+an entity that is larger.
+
+#### request.aborted
+
+This error will occur when the request stream is aborted by the client before
+reading the body has finished.
+
+#### request.size.invalid
+
+This error will occur when the `length` option is specified, but the stream has
+emitted more bytes.
+
+#### stream.encoding.set
+
+This error will occur when the given stream has an encoding set on it, making it
+a decoded stream. The stream should not have an encoding set and is expected to
+emit `Buffer` objects.
 
 ## Examples
 
