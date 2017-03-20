@@ -104,15 +104,6 @@ describe('Raw Body', function () {
       assert.equal(err.limit, length - 1)
       assert.equal(err.type, 'entity.too.large')
       assert.equal(err.message, 'request entity too large')
-      assert.deepEqual(err, {
-        type: 'entity.too.large',
-        message: 'request entity too large',
-        statusCode: 413,
-        status: 413,
-        expected: length,
-        length: length,
-        limit: length - 1
-      })
       done()
     })
   })

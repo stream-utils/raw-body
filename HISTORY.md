@@ -1,3 +1,8 @@
+unreleased
+==========
+
+  * Use `http-errors` for standard emitted errors
+
 2.2.0 / 2017-01-02
 ==================
 
