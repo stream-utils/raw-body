@@ -4,6 +4,7 @@ var getRawBody = require('..')
 var path = require('path')
 var through = require('through2')
 
+var EventEmitter = require('events').EventEmitter
 var Promise = global.Promise || require('bluebird')
 var Readable = require('readable-stream').Readable
 
@@ -361,23 +362,23 @@ describe('Raw Body', function () {
   })
 
   it('should work on streams1 stream', function (done) {
-    var stream = through()
-    stream.pause()
-    stream.write('foobar')
-    stream.write('foobaz')
-    stream.write('yay!!')
-    stream.end()
+    var stream = new EventEmitter()
 
     getRawBody(stream, {
       encoding: true,
-      length: 17
+      length: 19
     }, function (err, value) {
       assert.ifError(err)
+      assert.equal(value, 'foobar,foobaz,yay!!')
       done()
     })
 
-    // you have to call resume() for through
-    stream.resume()
+    process.nextTick(function () {
+      stream.emit('data', 'foobar,')
+      stream.emit('data', 'foobaz,')
+      stream.emit('data', 'yay!!')
+      stream.emit('end')
+    })
   })
 })
 
