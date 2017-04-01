@@ -2,7 +2,6 @@ var assert = require('assert')
 var fs = require('fs')
 var getRawBody = require('..')
 var path = require('path')
-var through = require('through2')
 
 var EventEmitter = require('events').EventEmitter
 var Promise = global.Promise || require('bluebird')
@@ -49,16 +48,19 @@ describe('Raw Body', function () {
   })
 
   it('should work when length=0', function (done) {
-    var t = through()
-    t.end()
+    var stream = new EventEmitter()
 
-    getRawBody(t, {
+    getRawBody(stream, {
       length: 0,
       encoding: true
     }, function (err, str) {
       assert.ifError(err)
       assert.equal(str, '')
       done()
+    })
+
+    process.nextTick(function () {
+      stream.emit('end')
     })
   })
 
