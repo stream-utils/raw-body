@@ -2,6 +2,7 @@ unreleased
 ==========
 
   * Use `http-errors` for standard emitted errors
+  * deps: bytes@2.5.0
 
 2.2.0 / 2017-01-02
 ==================
