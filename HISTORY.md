@@ -3,6 +3,10 @@ unreleased
 
   * Use `http-errors` for standard emitted errors
   * deps: bytes@2.5.0
+  * deps: iconv-lite@0.4.16
+    - Add support for React Native
+    - Add a warning if not loaded as utf-8
+    - Improve speed of ISO-8859-1 encoding
 
 2.2.0 / 2017-01-02
 ==================
