@@ -273,7 +273,10 @@ function readStream (stream, encoding, length, limit, callback) {
     }
   }
 
+  var cleanedUp = false
+
   function cleanup () {
+    if (cleanedUp) return
     buffer = null
 
     stream.removeListener('aborted', onAborted)
@@ -281,5 +284,7 @@ function readStream (stream, encoding, length, limit, callback) {
     stream.removeListener('end', onEnd)
     stream.removeListener('error', onEnd)
     stream.removeListener('close', cleanup)
+
+    cleanedUp = true
   }
 }
