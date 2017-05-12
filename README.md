@@ -10,6 +10,16 @@ Gets the entire buffer of a stream either as a `Buffer` or a string.
 Validates the stream's length against an expected length and maximum limit.
 Ideal for parsing request bodies.
 
+## Install
+
+This is a [Node.js](https://nodejs.org/en/) module available through the
+[npm registry](https://www.npmjs.com/). Installation is done using the
+[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
+
+```sh
+$ npm install raw-body
+```
+
 ## API
 
 <!-- eslint-disable no-unused-vars -->
