@@ -1,7 +1,7 @@
 unreleased
 ==========
 
-  * Include a TypeScript definition file
+  * Add TypeScript definitions
   * Use `http-errors` for standard emitted errors
   * deps: bytes@2.5.0
   * deps: iconv-lite@0.4.16
