@@ -3,6 +3,7 @@ var fs = require('fs')
 var getRawBody = require('..')
 var path = require('path')
 
+var Buffer = require('safe-buffer').Buffer
 var EventEmitter = require('events').EventEmitter
 var Promise = global.Promise || require('bluebird')
 var Readable = require('readable-stream').Readable
@@ -301,7 +302,7 @@ describe('Raw Body', function () {
     })
 
     it('should decode codepage string', function (done) {
-      var stream = createStream(new Buffer('bf43f36d6f20657374e1733f', 'hex'))
+      var stream = createStream(Buffer.from('bf43f36d6f20657374e1733f', 'hex'))
       var string = '¿Cómo estás?'
       getRawBody(stream, 'iso-8859-1', function (err, str) {
         assert.ifError(err)
@@ -311,7 +312,7 @@ describe('Raw Body', function () {
     })
 
     it('should decode UTF-8 string', function (done) {
-      var stream = createStream(new Buffer('c2bf43c3b36d6f20657374c3a1733f', 'hex'))
+      var stream = createStream(Buffer.from('c2bf43c3b36d6f20657374c3a1733f', 'hex'))
       var string = '¿Cómo estás?'
       getRawBody(stream, 'utf-8', function (err, str) {
         assert.ifError(err)
@@ -322,7 +323,7 @@ describe('Raw Body', function () {
 
     it('should decode UTF-16 string (LE BOM)', function (done) {
       // BOM makes this LE
-      var stream = createStream(new Buffer('fffebf004300f3006d006f002000650073007400e10073003f00', 'hex'))
+      var stream = createStream(Buffer.from('fffebf004300f3006d006f002000650073007400e10073003f00', 'hex'))
       var string = '¿Cómo estás?'
       getRawBody(stream, 'utf-16', function (err, str) {
         assert.ifError(err)
@@ -333,7 +334,7 @@ describe('Raw Body', function () {
 
     it('should decode UTF-16 string (BE BOM)', function (done) {
       // BOM makes this BE
-      var stream = createStream(new Buffer('feff00bf004300f3006d006f002000650073007400e10073003f', 'hex'))
+      var stream = createStream(Buffer.from('feff00bf004300f3006d006f002000650073007400e10073003f', 'hex'))
       var string = '¿Cómo estás?'
       getRawBody(stream, 'utf-16', function (err, str) {
         assert.ifError(err)
@@ -344,7 +345,7 @@ describe('Raw Body', function () {
 
     it('should decode UTF-16LE string', function (done) {
       // UTF-16LE is different from UTF-16 due to BOM behavior
-      var stream = createStream(new Buffer('bf004300f3006d006f002000650073007400e10073003f00', 'hex'))
+      var stream = createStream(Buffer.from('bf004300f3006d006f002000650073007400e10073003f00', 'hex'))
       var string = '¿Cómo estás?'
       getRawBody(stream, 'utf-16le', function (err, str) {
         assert.ifError(err)
@@ -354,7 +355,7 @@ describe('Raw Body', function () {
     })
 
     it('should correctly calculate the expected length', function (done) {
-      var stream = createStream(new Buffer('{"test":"å"}'))
+      var stream = createStream(Buffer.from('{"test":"å"}'))
 
       getRawBody(stream, {
         encoding: 'utf-8',

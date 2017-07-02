@@ -1,11 +1,12 @@
 var assert = require('assert')
+var Buffer = require('safe-buffer').Buffer
 var getRawBody = require('..')
 var Readable = require('stream').Readable
 var run = Readable ? describe : describe.skip
 
 run('using native streams', function () {
   it('should read contents', function (done) {
-    var stream = createStream(new Buffer('hello, streams!'))
+    var stream = createStream(Buffer.from('hello, streams!'))
 
     getRawBody(stream, function (err, buf) {
       assert.ifError(err)
@@ -15,7 +16,7 @@ run('using native streams', function () {
   })
 
   it('should read pre-buffered contents', function (done) {
-    var stream = createStream(new Buffer('hello, streams!'))
+    var stream = createStream(Buffer.from('hello, streams!'))
     stream.push('oh, ')
 
     getRawBody(stream, function (err, buf) {
@@ -26,7 +27,7 @@ run('using native streams', function () {
   })
 
   it('should stop the stream on limit', function (done) {
-    var stream = createStream(new Buffer('hello, streams!'))
+    var stream = createStream(Buffer.from('hello, streams!'))
 
     getRawBody(stream, { limit: 2 }, function (err, buf) {
       assert.ok(err)
