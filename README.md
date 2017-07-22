@@ -24,7 +24,12 @@ $ npm install raw-body
 
 This module includes a [TypeScript](https://www.typescriptlang.org/)
 declarition file to enable auto complete in compatible editors and type
-information for TypeScript projects.
+information for TypeScript projects. This module depends on the Node.js
+types, so install `@types/node`:
+
+```sh
+$ npm install @types/node
+```
 
 ## API
 
