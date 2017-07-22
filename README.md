@@ -182,6 +182,27 @@ var server = http.createServer(function (req, res) {
 server.listen(3000)
 ```
 
+### Using with TypeScript
+
+```ts
+import * as getRawBody from 'raw-body';
+import * as http from 'http';
+
+const server = http.createServer((req, res) => {
+  getRawBody(req)
+  .then((buf) => {
+    res.statusCode = 200;
+    res.end(buf.length + ' bytes submitted');
+  })
+  .catch((err) => {
+    res.statusCode = err.statusCode;
+    res.end(err.message);
+  });
+});
+
+server.listen(3000);
+```
+
 ## License
 
 [MIT](LICENSE)
