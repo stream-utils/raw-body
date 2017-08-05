@@ -1,5 +1,5 @@
-unreleased
-==========
+2.3.0 / 2017-08-04
+==================
 
   * Add TypeScript definitions
   * Use `http-errors` for standard emitted errors
