@@ -242,18 +242,16 @@ function readStream (stream, encoding, length, limit, callback) {
 
     received += chunk.length
 
-    if (decoder) {
-      buffer += decoder.write(chunk)
-    } else {
-      buffer.push(chunk)
-    }
-
     if (limit !== null && received > limit) {
       done(createError(413, 'request entity too large', {
         limit: limit,
         received: received,
         type: 'entity.too.large'
       }))
+    } else if (decoder) {
+      buffer += decoder.write(chunk)
+    } else {
+      buffer.push(chunk)
     }
   }
 

@@ -4,6 +4,7 @@ unreleased
   * deps: bytes@3.0.0
   * deps: http-errors@1.6.2
     - deps: depd@1.1.1
+  * perf: skip buffer decoding on overage chunk
 
 2.3.0 / 2017-08-04
 ==================
