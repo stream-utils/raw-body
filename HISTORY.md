@@ -1,3 +1,10 @@
+unreleased
+==========
+
+  * deps: iconv-lite@0.4.19
+    - Fix ISO-8859-1regression
+    - Update Windows-1255
+
 2.3.1 / 2017-09-07
 ==================
 
