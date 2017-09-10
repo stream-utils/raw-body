@@ -1,5 +1,5 @@
-unreleased
-==========
+2.3.2 / 2017-09-09
+==================
 
   * deps: iconv-lite@0.4.19
     - Fix ISO-8859-1regression
