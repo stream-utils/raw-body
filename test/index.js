@@ -226,15 +226,14 @@ describe('Raw Body', function () {
 
     it('should work as a promise', function () {
       return getRawBody(createStream())
-      .then(checkBuffer)
+        .then(checkBuffer)
     })
 
     it('should work as a promise when length > limit', function () {
       return getRawBody(createStream(), {
         length: length,
         limit: length - 1
-      })
-      .then(throwExpectedError, function (err) {
+      }).then(throwExpectedError, function (err) {
         assert.equal(err.status, 413)
       })
     })
