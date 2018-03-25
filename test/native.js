@@ -36,6 +36,21 @@ run('using native streams', function () {
       process.nextTick(done)
     })
   })
+
+  it('should throw if stream is not readable', function (done) {
+    var stream = createStream(Buffer.from('hello, streams!'))
+
+    stream.resume()
+    stream.on('end', function () {
+      getRawBody(stream, function (err) {
+        assert.ok(err)
+        assert.strictEqual(err.status, 500)
+        assert.strictEqual(err.type, 'stream.not.readable')
+        assert.strictEqual(err.message, 'stream is not readable')
+        process.nextTick(done)
+      })
+    })
+  })
 })
 
 function createStream (buf) {

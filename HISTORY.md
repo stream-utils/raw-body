@@ -2,6 +2,7 @@ unreleased
 ==========
 
   * Prevent loss of async hooks context
+  * Prevent hanging when stream is not readable
   * deps: http-errors@2.0.0
     - deps: depd@2.0.0
     - deps: statuses@2.0.1
