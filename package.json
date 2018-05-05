@@ -27,7 +27,7 @@
     "istanbul": "0.4.5",
     "mocha": "2.5.3",
     "readable-stream": "2.3.6",
-    "safe-buffer": "5.1.1"
+    "safe-buffer": "5.1.2"
   },
   "engines": {
     "node": ">= 0.8"
