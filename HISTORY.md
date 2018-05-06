@@ -5,6 +5,9 @@ unreleased
     - deps: depd@~1.1.2
     - deps: setprototypeof@1.1.0
     - deps: statuses@'>= 1.3.1 < 2'
+  * deps: iconv-lite@0.4.22
+    - Fix loading encoding with year appended
+    - Fix deprecation warnings on Node.js 10+
 
 2.3.2 / 2017-09-09
 ==================

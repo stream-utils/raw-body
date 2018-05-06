@@ -12,7 +12,7 @@
   "dependencies": {
     "bytes": "3.0.0",
     "http-errors": "1.6.3",
-    "iconv-lite": "0.4.19",
+    "iconv-lite": "0.4.22",
     "unpipe": "1.0.0"
   },
   "devDependencies": {
