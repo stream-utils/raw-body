@@ -27,7 +27,7 @@ describe('Raw Body', function () {
   it('should work with `true` as an option', function (done) {
     getRawBody(createStream(), true, function (err, buf) {
       assert.ifError(err)
-      assert.equal(typeof buf, 'string')
+      assert.strictEqual(typeof buf, 'string')
       done()
     })
   })
@@ -56,7 +56,7 @@ describe('Raw Body', function () {
       encoding: true
     }, function (err, str) {
       assert.ifError(err)
-      assert.equal(str, '')
+      assert.strictEqual(str, '')
       done()
     })
 
@@ -101,13 +101,13 @@ describe('Raw Body', function () {
       length: length,
       limit: length - 1
     }, function (err, buf) {
-      assert.equal(err.status, 413)
-      assert.equal(err.statusCode, 413)
-      assert.equal(err.expected, length)
-      assert.equal(err.length, length)
-      assert.equal(err.limit, length - 1)
-      assert.equal(err.type, 'entity.too.large')
-      assert.equal(err.message, 'request entity too large')
+      assert.strictEqual(err.status, 413)
+      assert.strictEqual(err.statusCode, 413)
+      assert.strictEqual(err.expected, length)
+      assert.strictEqual(err.length, length)
+      assert.strictEqual(err.limit, length - 1)
+      assert.strictEqual(err.type, 'entity.too.large')
+      assert.strictEqual(err.message, 'request entity too large')
       done()
     })
   })
@@ -121,7 +121,7 @@ describe('Raw Body', function () {
       limit: 1
     }, function (err, buf) {
       assert.ifError(err)
-      assert.equal(buf.length, 0)
+      assert.strictEqual(buf.length, 0)
       done()
     })
 
@@ -136,7 +136,7 @@ describe('Raw Body', function () {
       length: 1,
       limit: 2
     }, function (err, buf) {
-      assert.equal(err.status, 400)
+      assert.strictEqual(err.status, 400)
       done()
     })
 
@@ -147,7 +147,7 @@ describe('Raw Body', function () {
     getRawBody(createStream(), {
       limit: length - 1
     }, function (err, buf) {
-      assert.equal(err.status, 413)
+      assert.strictEqual(err.status, 413)
       done()
     })
   })
@@ -156,7 +156,7 @@ describe('Raw Body', function () {
     getRawBody(createStream(), {
       length: length - 1
     }, function (err, buf) {
-      assert.equal(err.status, 400)
+      assert.strictEqual(err.status, 400)
       done()
     })
   })
@@ -184,7 +184,7 @@ describe('Raw Body', function () {
     }, function (err, buf) {
       if (err) return done(err)
       assert.ok(buf)
-      assert.equal(buf.length, 13)
+      assert.strictEqual(buf.length, 13)
       done()
     })
   })
@@ -196,7 +196,7 @@ describe('Raw Body', function () {
     stream.setEncoding('utf8')
 
     getRawBody(stream, function (err, buf) {
-      assert.equal(err.status, 500)
+      assert.strictEqual(err.status, 500)
       done()
     })
   })
@@ -208,9 +208,9 @@ describe('Raw Body', function () {
 
     getRawBody(stream, 'akljsdflkajsdf', function (err) {
       assert.ok(err)
-      assert.equal(err.message, 'specified encoding unsupported')
-      assert.equal(err.status, 415)
-      assert.equal(err.type, 'encoding.unsupported')
+      assert.strictEqual(err.message, 'specified encoding unsupported')
+      assert.strictEqual(err.status, 415)
+      assert.strictEqual(err.type, 'encoding.unsupported')
       done()
     })
   })
@@ -234,7 +234,7 @@ describe('Raw Body', function () {
         length: length,
         limit: length - 1
       }).then(throwExpectedError, function (err) {
-        assert.equal(err.status, 413)
+        assert.strictEqual(err.status, 413)
       })
     })
   })
@@ -277,7 +277,7 @@ describe('Raw Body', function () {
         encoding: 'utf-8'
       }, function (err, str) {
         assert.ifError(err)
-        assert.equal(str, string)
+        assert.strictEqual(str, string)
         done()
       })
     })
@@ -287,7 +287,7 @@ describe('Raw Body', function () {
         encoding: true
       }, function (err, str) {
         assert.ifError(err)
-        assert.equal(str, string)
+        assert.strictEqual(str, string)
         done()
       })
     })
@@ -295,7 +295,7 @@ describe('Raw Body', function () {
     it('should handle encoding as options string', function (done) {
       getRawBody(createStream(), 'utf-8', function (err, str) {
         assert.ifError(err)
-        assert.equal(str, string)
+        assert.strictEqual(str, string)
         done()
       })
     })
@@ -305,7 +305,7 @@ describe('Raw Body', function () {
       var string = '¿Cómo estás?'
       getRawBody(stream, 'iso-8859-1', function (err, str) {
         assert.ifError(err)
-        assert.equal(str, string)
+        assert.strictEqual(str, string)
         done()
       })
     })
@@ -315,7 +315,7 @@ describe('Raw Body', function () {
       var string = '¿Cómo estás?'
       getRawBody(stream, 'utf-8', function (err, str) {
         assert.ifError(err)
-        assert.equal(str, string)
+        assert.strictEqual(str, string)
         done()
       })
     })
@@ -326,7 +326,7 @@ describe('Raw Body', function () {
       var string = '¿Cómo estás?'
       getRawBody(stream, 'utf-16', function (err, str) {
         assert.ifError(err)
-        assert.equal(str, string)
+        assert.strictEqual(str, string)
         done()
       })
     })
@@ -337,7 +337,7 @@ describe('Raw Body', function () {
       var string = '¿Cómo estás?'
       getRawBody(stream, 'utf-16', function (err, str) {
         assert.ifError(err)
-        assert.equal(str, string)
+        assert.strictEqual(str, string)
         done()
       })
     })
@@ -348,7 +348,7 @@ describe('Raw Body', function () {
       var string = '¿Cómo estás?'
       getRawBody(stream, 'utf-16le', function (err, str) {
         assert.ifError(err)
-        assert.equal(str, string)
+        assert.strictEqual(str, string)
         done()
       })
     })
@@ -371,7 +371,7 @@ describe('Raw Body', function () {
       length: 19
     }, function (err, value) {
       assert.ifError(err)
-      assert.equal(value, 'foobar,foobaz,yay!!')
+      assert.strictEqual(value, 'foobar,foobaz,yay!!')
       done()
     })
 
@@ -386,13 +386,13 @@ describe('Raw Body', function () {
 
 function checkBuffer (buf) {
   assert.ok(Buffer.isBuffer(buf))
-  assert.equal(buf.length, length)
-  assert.equal(buf.toString('utf8'), string)
+  assert.strictEqual(buf.length, length)
+  assert.strictEqual(buf.toString('utf8'), string)
 }
 
 function checkString (str) {
   assert.ok(typeof str === 'string')
-  assert.equal(str, string)
+  assert.strictEqual(str, string)
 }
 
 function createStream (buf) {

@@ -19,12 +19,12 @@ describe('stream flowing', function () {
         length: defaultLimit * 2
       }, function (err, body) {
         assert.ok(err)
-        assert.equal(err.type, 'entity.too.large')
-        assert.equal(err.message, 'request entity too large')
-        assert.equal(err.statusCode, 413)
-        assert.equal(err.length, defaultLimit * 2)
-        assert.equal(err.limit, defaultLimit)
-        assert.equal(body, undefined)
+        assert.strictEqual(err.type, 'entity.too.large')
+        assert.strictEqual(err.message, 'request entity too large')
+        assert.strictEqual(err.statusCode, 413)
+        assert.strictEqual(err.length, defaultLimit * 2)
+        assert.strictEqual(err.limit, defaultLimit)
+        assert.strictEqual(body, undefined)
         assert.ok(stream.isPaused)
 
         done()
@@ -43,10 +43,10 @@ describe('stream flowing', function () {
         length: defaultLimit
       }, function (err, body) {
         assert.ok(err)
-        assert.equal(err.type, 'entity.too.large')
-        assert.equal(err.message, 'request entity too large')
-        assert.equal(err.statusCode, 413)
-        assert.equal(body, undefined)
+        assert.strictEqual(err.type, 'entity.too.large')
+        assert.strictEqual(err.message, 'request entity too large')
+        assert.strictEqual(err.statusCode, 413)
+        assert.strictEqual(body, undefined)
         assert.ok(stream.isPaused)
         done()
       })
@@ -62,9 +62,9 @@ describe('stream flowing', function () {
         limit: defaultLimit
       }, function (err, body) {
         assert.ok(err)
-        assert.equal(err.type, 'stream.encoding.set')
-        assert.equal(err.message, 'stream encoding should not be set')
-        assert.equal(err.statusCode, 500)
+        assert.strictEqual(err.type, 'stream.encoding.set')
+        assert.strictEqual(err.message, 'stream encoding should not be set')
+        assert.strictEqual(err.statusCode, 500)
         assert.ok(stream.isPaused)
 
         done()
@@ -80,10 +80,10 @@ describe('stream flowing', function () {
         limit: defaultLimit
       }, function (err, body) {
         assert.ok(err)
-        assert.equal(err.type, 'entity.too.large')
-        assert.equal(err.statusCode, 413)
+        assert.strictEqual(err.type, 'entity.too.large')
+        assert.strictEqual(err.statusCode, 413)
         assert.ok(err.received > defaultLimit)
-        assert.equal(err.limit, defaultLimit)
+        assert.strictEqual(err.limit, defaultLimit)
         assert.ok(stream.isPaused)
 
         done()
@@ -97,7 +97,7 @@ describe('stream flowing', function () {
 
       getRawBody(stream, function (err, body) {
         assert.ok(err)
-        assert.equal(err.message, 'BOOM')
+        assert.strictEqual(err.message, 'BOOM')
         assert.ok(stream.isPaused)
 
         done()

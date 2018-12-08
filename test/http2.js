@@ -32,7 +32,7 @@ describeHttp2('using http2 streams', function () {
         getRawBody(request, { encoding: true }, function (err, str) {
           http2close(server, session, function onClose () {
             assert.ifError(err)
-            assert.equal(str, 'hello, world!')
+            assert.strictEqual(str, 'hello, world!')
             done()
           })
         })
@@ -65,7 +65,7 @@ describeHttp2('using http2 streams', function () {
         getRawBody(request, { encoding: true }, function (err, str) {
           http2close(server, session, function onClose () {
             assert.ifError(err)
-            assert.equal(str, 'stream encoding should not be set')
+            assert.strictEqual(str, 'stream encoding should not be set')
             done()
           })
         })
@@ -79,12 +79,12 @@ describeHttp2('using http2 streams', function () {
       getRawBody(req, { length: req.headers['content-length'] }, function (err, body) {
         server.close()
         assert.ok(err)
-        assert.equal(err.code, 'ECONNABORTED')
-        assert.equal(err.expected, 50)
-        assert.equal(err.message, 'request aborted')
-        assert.equal(err.received, 10)
-        assert.equal(err.status, 400)
-        assert.equal(err.type, 'request.aborted')
+        assert.strictEqual(err.code, 'ECONNABORTED')
+        assert.strictEqual(err.expected, 50)
+        assert.strictEqual(err.message, 'request aborted')
+        assert.strictEqual(err.received, 10)
+        assert.strictEqual(err.status, 400)
+        assert.strictEqual(err.type, 'request.aborted')
         done()
       })
 
