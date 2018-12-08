@@ -19,7 +19,7 @@ describe('using http streams', function () {
 
     server.listen(function onListen () {
       var addr = server.address()
-      var client = http.request({method: 'POST', port: addr.port})
+      var client = http.request({ method: 'POST', port: addr.port })
 
       client.end('hello, world!')
 
@@ -51,7 +51,7 @@ describe('using http streams', function () {
 
     server.listen(function onListen () {
       var addr = server.address()
-      var client = http.request({method: 'POST', port: addr.port})
+      var client = http.request({ method: 'POST', port: addr.port })
 
       client.end('hello, world!')
 

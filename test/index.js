@@ -13,6 +13,7 @@ var length = fs.statSync(file).size
 var string = fs.readFileSync(file, 'utf8')
 
 // Add Promise to mocha's global list
+// eslint-disable-next-line no-self-assign
 global.Promise = global.Promise
 
 describe('Raw Body', function () {

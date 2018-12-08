@@ -7,6 +7,7 @@ var getRawBody = require('../')
 var defaultLimit = 1024 * 1024
 
 // Add Promise to mocha's global list
+// eslint-disable-next-line no-self-assign
 global.Promise = global.Promise
 
 describe('stream flowing', function () {
