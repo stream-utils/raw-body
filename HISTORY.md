@@ -1,3 +1,9 @@
+unreleased
+==========
+
+  * deps: iconv-lite@0.4.24
+    - Added encoding MIK
+
 2.3.3 / 2018-05-08
 ==================
 
