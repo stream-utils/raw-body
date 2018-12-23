@@ -1,6 +1,9 @@
 unreleased
 ==========
 
+  * deps: http-errors@1.7.1
+    - Set constructor name when possible
+    - deps: statuses@'>= 1.5.0 < 2'
   * deps: iconv-lite@0.4.24
     - Added encoding MIK
 
