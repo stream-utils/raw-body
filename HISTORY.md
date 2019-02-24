@@ -1,6 +1,8 @@
 unreleased
 ==========
 
+  * deps: bytes@3.1.0
+    - Add petabyte (`pb`) support
   * deps: http-errors@1.7.1
     - Set constructor name when possible
     - deps: statuses@'>= 1.5.0 < 2'
