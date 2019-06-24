@@ -16,7 +16,7 @@
     "unpipe": "1.0.0"
   },
   "devDependencies": {
-    "bluebird": "3.5.4",
+    "bluebird": "3.5.5",
     "eslint": "5.16.0",
     "eslint-config-standard": "12.0.0",
     "eslint-plugin-import": "2.17.2",
