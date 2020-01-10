@@ -253,6 +253,14 @@ function readStream (stream, encoding, length, limit, callback) {
     } else {
       buffer.push(chunk)
     }
+
+    if (received === length) {
+      // force completion if we've already received the desired length.
+      // this resolves a problem with some http2 connections where the
+      // request stream does not fire `end` event until after the request
+      // times out.
+      onEnd();
+    }
   }
 
   function onEnd (err) {
