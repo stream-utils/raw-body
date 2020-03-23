@@ -2,6 +2,9 @@
 ===
 
   * Drop support for Node.js 0.8
+  * deps: iconv-lite@0.5.2
+    - Add encoding cp720
+    - Add encoding UTF-32
 
 2.5.2 / 2023-02-21
 ==================
