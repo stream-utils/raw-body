@@ -1,5 +1,3 @@
-import { Readable } from 'stream';
-
 declare namespace getRawBody {
   export type Encoding = string | true;
 
@@ -58,29 +56,29 @@ declare namespace getRawBody {
  * limit. Ideal for parsing request bodies.
  */
 declare function getRawBody(
-  stream: Readable,
+  stream: NodeJS.ReadableStream,
   callback: (err: getRawBody.RawBodyError, body: Buffer) => void
 ): void;
 
 declare function getRawBody(
-  stream: Readable,
+  stream: NodeJS.ReadableStream,
   options: (getRawBody.Options & { encoding: getRawBody.Encoding }) | getRawBody.Encoding,
   callback: (err: getRawBody.RawBodyError, body: string) => void
 ): void;
 
 declare function getRawBody(
-  stream: Readable,
+  stream: NodeJS.ReadableStream,
   options: getRawBody.Options,
   callback: (err: getRawBody.RawBodyError, body: Buffer) => void
 ): void;
 
 declare function getRawBody(
-  stream: Readable,
+  stream: NodeJS.ReadableStream,
   options: (getRawBody.Options & { encoding: getRawBody.Encoding }) | getRawBody.Encoding
 ): Promise<string>;
 
 declare function getRawBody(
-  stream: Readable,
+  stream: NodeJS.ReadableStream,
   options?: getRawBody.Options
 ): Promise<Buffer>;
 

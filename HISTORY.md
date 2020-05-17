@@ -1,6 +1,7 @@
 3.x
 ===
 
+  * Change TypeScript argument to `NodeJS.ReadableStream` interface
   * Drop support for Node.js 0.8
   * deps: iconv-lite@0.5.2
     - Add encoding cp720
