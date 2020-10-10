@@ -1,6 +1,7 @@
 unreleased
 ==========
 
+  * Prevent loss of async hooks context
   * deps: http-errors@2.0.0
     - deps: depd@2.0.0
     - deps: statuses@2.0.1

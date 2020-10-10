@@ -12,6 +12,7 @@
  * @private
  */
 
+var asyncHooks = tryRequireAsyncHooks()
 var bytes = require('bytes')
 var createError = require('http-errors')
 var iconv = require('iconv-lite')
@@ -105,7 +106,7 @@ function getRawBody (stream, options, callback) {
 
   if (done) {
     // classic callback style
-    return readStream(stream, encoding, length, limit, done)
+    return readStream(stream, encoding, length, limit, wrap(done))
   }
 
   return new Promise(function executor (resolve, reject) {
@@ -283,4 +284,34 @@ function readStream (stream, encoding, length, limit, callback) {
     stream.removeListener('error', onEnd)
     stream.removeListener('close', cleanup)
   }
+}
+
+/**
+ * Try to require async_hooks
+ * @private
+ */
+
+function tryRequireAsyncHooks () {
+  try {
+    return require('async_hooks')
+  } catch (e) {
+    /* istanbul ignore next */
+    return {}
+  }
+}
+
+/**
+ * Wrap function with async resource
+ * @private
+ */
+
+function wrap (fn) {
+  if (!asyncHooks.AsyncResource) {
+    /* istanbul ignore next */
+    return fn
+  }
+
+  // AsyncResource.bind static method backported
+  var res = new asyncHooks.AsyncResource(fn.name || 'bound-anonymous-fn')
+  return res.runInAsyncScope.bind(res, fn, null)
 }

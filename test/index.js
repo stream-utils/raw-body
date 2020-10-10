@@ -1,4 +1,5 @@
 var assert = require('assert')
+var asyncHooks = tryRequire('async_hooks')
 var fs = require('fs')
 var getRawBody = require('..')
 var path = require('path')
@@ -7,6 +8,10 @@ var Buffer = require('safe-buffer').Buffer
 var EventEmitter = require('events').EventEmitter
 var Promise = global.Promise || require('bluebird')
 var Readable = require('readable-stream').Readable
+
+var describeAsyncHooks = typeof asyncHooks.AsyncLocalStorage === 'function'
+  ? describe
+  : describe.skip
 
 var file = path.join(__dirname, 'index.js')
 var length = fs.statSync(file).size
@@ -272,6 +277,37 @@ describe('Raw Body', function () {
     })
   })
 
+  describeAsyncHooks('with async local storage', function () {
+    it('should presist store in callback', function (done) {
+      var asyncLocalStorage = new asyncHooks.AsyncLocalStorage()
+      var store = { foo: 'bar' }
+      var stream = createStream()
+
+      asyncLocalStorage.run(store, function () {
+        getRawBody(stream, function (err, buf) {
+          if (err) return done(err)
+          assert.ok(buf.length > 0)
+          assert.strictEqual(asyncLocalStorage.getStore().foo, 'bar')
+          done()
+        })
+      })
+    })
+
+    it('should presist store in promise', function (done) {
+      var asyncLocalStorage = new asyncHooks.AsyncLocalStorage()
+      var store = { foo: 'bar' }
+      var stream = createStream()
+
+      asyncLocalStorage.run(store, function () {
+        getRawBody(stream).then(function (buf) {
+          assert.ok(buf.length > 0)
+          assert.strictEqual(asyncLocalStorage.getStore().foo, 'bar')
+          done()
+        }, done)
+      })
+    })
+  })
+
   describe('when an encoding is set', function () {
     it('should return a string', function (done) {
       getRawBody(createStream(), {
@@ -410,4 +446,12 @@ function createStream (buf) {
 
 function throwExpectedError () {
   throw new Error('expected error')
+}
+
+function tryRequire (name) {
+  try {
+    return require(name)
+  } catch (e) {
+    return {}
+  }
 }
