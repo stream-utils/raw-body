@@ -30,7 +30,7 @@
     "safe-buffer": "5.1.2"
   },
   "engines": {
-    "node": ">= 0.8"
+    "node": ">= 10"
   },
   "files": [
     "HISTORY.md",
