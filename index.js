@@ -152,7 +152,8 @@ function readStream (stream, encoding, length, limit, callback) {
   // note: we intentionally leave the stream paused,
   // so users should handle the stream themselves.
   if (limit !== null && length !== null && length > limit) {
-    return done(createError(413, 'request entity too large', {
+    var message = 'request entity too large (limit is ' + limit + ' bytes; expecting ' + length + ')'
+    return done(createError(413, message, {
       expected: length,
       length: length,
       limit: limit,
@@ -243,7 +244,8 @@ function readStream (stream, encoding, length, limit, callback) {
     received += chunk.length
 
     if (limit !== null && received > limit) {
-      done(createError(413, 'request entity too large', {
+      var message = 'request entity too large (limit is ' + limit + ' bytes; received ' + received + ')'
+      done(createError(413, message, {
         limit: limit,
         received: received,
         type: 'entity.too.large'

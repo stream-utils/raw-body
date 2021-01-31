@@ -21,7 +21,7 @@ describe('stream flowing', function () {
       }, function (err, body) {
         assert.ok(err)
         assert.strictEqual(err.type, 'entity.too.large')
-        assert.strictEqual(err.message, 'request entity too large')
+        assert.match(err.message, /request entity too large/)
         assert.strictEqual(err.statusCode, 413)
         assert.strictEqual(err.length, defaultLimit * 2)
         assert.strictEqual(err.limit, defaultLimit)
@@ -45,10 +45,27 @@ describe('stream flowing', function () {
       }, function (err, body) {
         assert.ok(err)
         assert.strictEqual(err.type, 'entity.too.large')
-        assert.strictEqual(err.message, 'request entity too large')
+        assert.match(err.message, /request entity too large/)
         assert.strictEqual(err.statusCode, 413)
         assert.strictEqual(body, undefined)
         assert.ok(stream.isPaused)
+        done()
+      })
+    })
+
+    it('should indicate to receivers what the limit is', function (done) {
+      var stream = createInfiniteStream(true)
+      var dest = createBlackholeStream()
+
+      // pipe the stream
+      stream.pipe(dest)
+
+      getRawBody(stream, {
+        limit: defaultLimit * 2,
+        length: defaultLimit
+      }, function (err, body) {
+        assert.strictEqual(err.type, 'entity.too.large')
+        assert.match(err.message, new RegExp('request entity too large \\(limit is ' + (defaultLimit * 2) + ' bytes; received \\d+\\)'))
         done()
       })
     })

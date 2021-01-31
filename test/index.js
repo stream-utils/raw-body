@@ -108,7 +108,7 @@ describe('Raw Body', function () {
       assert.strictEqual(err.length, length)
       assert.strictEqual(err.limit, length - 1)
       assert.strictEqual(err.type, 'entity.too.large')
-      assert.strictEqual(err.message, 'request entity too large')
+      assert.strictEqual(err.message, 'request entity too large (limit is ' + (length - 1) + ' bytes; expecting ' + length + ')')
       done()
     })
   })
