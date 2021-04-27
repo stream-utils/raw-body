@@ -18,7 +18,7 @@
   "devDependencies": {
     "bluebird": "3.7.1",
     "eslint": "7.24.0",
-    "eslint-config-standard": "14.1.0",
+    "eslint-config-standard": "14.1.1",
     "eslint-plugin-import": "2.22.1",
     "eslint-plugin-markdown": "1.0.2",
     "eslint-plugin-node": "11.1.0",
