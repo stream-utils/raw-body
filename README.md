@@ -33,8 +33,6 @@ $ npm install @types/node
 
 ## API
 
-<!-- eslint-disable no-unused-vars -->
-
 ```js
 var getRawBody = require('raw-body')
 ```

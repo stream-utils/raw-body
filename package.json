@@ -20,7 +20,7 @@
     "eslint": "7.28.0",
     "eslint-config-standard": "14.1.1",
     "eslint-plugin-import": "2.23.4",
-    "eslint-plugin-markdown": "1.0.2",
+    "eslint-plugin-markdown": "2.2.0",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "4.3.1",
     "eslint-plugin-standard": "4.1.0",
@@ -40,7 +40,7 @@
     "index.js"
   ],
   "scripts": {
-    "lint": "eslint --plugin markdown --ext js,md .",
+    "lint": "eslint .",
     "test": "mocha --trace-deprecation --reporter spec --bail --check-leaks test/",
     "test-ci": "istanbul cover node_modules/mocha/bin/_mocha --report lcovonly -- --trace-deprecation --reporter spec --check-leaks test/",
     "test-cov": "istanbul cover node_modules/mocha/bin/_mocha -- --trace-deprecation --reporter dot --check-leaks test/"
