@@ -1,8 +1,9 @@
 unreleased
 ==========
 
-  * deps: http-errors@1.8.0
+  * deps: http-errors@1.8.1
     - deps: setprototypeof@1.2.0
+    - deps: toidentifier@1.0.1
 
 2.4.1 / 2019-06-25
 ==================
