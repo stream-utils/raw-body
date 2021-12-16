@@ -61,8 +61,10 @@ You can also pass a string in place of options to just specify the encoding.
 
 If an error occurs, the stream will be paused, everything unpiped,
 and you are responsible for correctly disposing the stream.
-For HTTP requests, no handling is required if you send a response.
-For streams that use file descriptors, you should `stream.destroy()` or `stream.close()` to prevent leaks.
+For HTTP requests, you may need to finish consuming the stream if
+you want to keep the socket open for future requests. For streams
+that use file descriptors, you should `stream.destroy()` or
+`stream.close()` to prevent leaks.
 
 ## Errors
 
@@ -79,7 +81,7 @@ otherwise an error created by this module, which has the following attributes:
 
 ### Types
 
-The errors from this module have a `type` property which allows for the progamatic
+The errors from this module have a `type` property which allows for the programmatic
 determination of the type of error returned.
 
 #### encoding.unsupported
