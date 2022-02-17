@@ -1,3 +1,10 @@
+unreleased
+==========
+
+  * deps: http-errors@2.0.0
+    - deps: depd@2.0.0
+    - deps: statuses@2.0.1
+
 2.4.3 / 2022-02-14
 ==================
 
