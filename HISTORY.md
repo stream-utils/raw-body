@@ -1,5 +1,5 @@
-unreleased
-==========
+2.5.0 / 2022-02-21
+==================
 
   * Prevent loss of async hooks context
   * Prevent hanging when stream is not readable
