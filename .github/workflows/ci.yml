@@ -20,6 +20,7 @@ jobs:
         - Node.js 5.x
         - Node.js 6.x
         - Node.js 7.x
+        - Node.js 8.0 # test early async_hooks
         - Node.js 8.x
         - Node.js 9.x
         - Node.js 10.x
@@ -71,6 +72,10 @@ jobs:
 
         - name: Node.js 7.x
           node-version: "7.10"
+          npm-i: mocha@6.2.2 nyc@14.1.1
+
+        - name: Node.js 8.0
+          node-version: "8.0"
           npm-i: mocha@6.2.2 nyc@14.1.1
 
         - name: Node.js 8.x

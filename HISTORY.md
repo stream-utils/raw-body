@@ -1,3 +1,8 @@
+unreleased
+==========
+
+  * Fix error on early async hooks implementations
+
 2.5.0 / 2022-02-21
 ==================
 

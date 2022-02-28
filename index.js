@@ -301,23 +301,29 @@ function tryRequireAsyncHooks () {
   try {
     return require('async_hooks')
   } catch (e) {
-    /* istanbul ignore next */
     return {}
   }
 }
 
 /**
- * Wrap function with async resource
+ * Wrap function with async resource, if possible.
+ * AsyncResource.bind static method backported.
  * @private
  */
 
 function wrap (fn) {
-  if (!asyncHooks.AsyncResource) {
-    /* istanbul ignore next */
+  var res
+
+  // create anonymous resource
+  if (asyncHooks.AsyncResource) {
+    res = new asyncHooks.AsyncResource(fn.name || 'bound-anonymous-fn')
+  }
+
+  // incompatible node.js
+  if (!res || !res.runInAsyncScope) {
     return fn
   }
 
-  // AsyncResource.bind static method backported
-  var res = new asyncHooks.AsyncResource(fn.name || 'bound-anonymous-fn')
+  // return bound function
   return res.runInAsyncScope.bind(res, fn, null)
 }
