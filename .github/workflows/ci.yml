@@ -113,7 +113,7 @@ jobs:
           node-version: "17.6"
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Install Node.js ${{ matrix.node-version }}
       shell: bash -eo pipefail -l {0}
@@ -186,7 +186,7 @@ jobs:
         fi
 
     - name: Upload code coverage
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       if: steps.list_env.outputs.nyc != ''
       with:
         name: coverage
@@ -197,14 +197,14 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Install lcov
       shell: bash
       run: sudo apt-get -y install lcov
 
     - name: Collect coverage reports
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: coverage
         path: ./coverage
