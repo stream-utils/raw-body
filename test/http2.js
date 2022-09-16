@@ -81,7 +81,7 @@ describeHttp2('using http2 streams', function () {
         assert.ok(err)
         assert.strictEqual(err.code, 'ECONNABORTED')
         assert.strictEqual(err.expected, 50)
-        assert.strictEqual(err.message, 'request aborted')
+        assert.strictEqual(err.message, 'request aborted, expected content-length: 50, received: 10')
         assert.strictEqual(err.received, 10)
         assert.strictEqual(err.status, 400)
         assert.strictEqual(err.type, 'request.aborted')

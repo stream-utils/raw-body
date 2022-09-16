@@ -234,8 +234,11 @@ function readStream (stream, encoding, length, limit, callback) {
 
   function onAborted () {
     if (complete) return
-
-    done(createError(400, 'request aborted', {
+    var message = 'request aborted'
+    if (received !== length) {
+      message += `, expected content-length: ${length}, received: ${received}`
+    }
+    done(createError(400, message, {
       code: 'ECONNABORTED',
       expected: length,
       length: length,
