@@ -325,5 +325,14 @@ function wrap (fn) {
   }
 
   // return bound function
-  return res.runInAsyncScope.bind(res, fn, null)
+  return function () {
+    var args = new Array(arguments.length)
+    for (var i = 0; i < args.length; i++) {
+      args[i] = arguments[i]
+    }
+
+    res.runInAsyncScope(function () { fn.apply(null, args) }, null)
+
+    res.emitDestroy()
+  }
 }
