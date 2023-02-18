@@ -8,7 +8,7 @@ var describeHttp2 = !http2
   : describe
 
 describeHttp2('using http2 streams', function () {
-  it('should read body streams', function (done) {
+  it('should read from compatibility api', function (done) {
     var server = http2.createServer(function onRequest (req, res) {
       getRawBody(req, { length: req.headers['content-length'] }, function (err, body) {
         if (err) {
@@ -32,6 +32,43 @@ describeHttp2('using http2 streams', function () {
         getRawBody(request, { encoding: true }, function (err, str) {
           http2close(server, session, function onClose () {
             assert.ifError(err)
+            assert.strictEqual(headers[':status'], 200)
+            assert.strictEqual(str, 'hello, world!')
+            done()
+          })
+        })
+      })
+    })
+  })
+
+  it('should read body streams', function (done) {
+    var server = http2.createServer()
+
+    server.on('stream', function onStream (stream, headers) {
+      getRawBody(stream, { length: headers['content-length'] }, function (err, body) {
+        if (err) {
+          stream.resume()
+          stream.respond({ ':status': 500 })
+          stream.end(err.message)
+          return
+        }
+
+        stream.end(body)
+      })
+    })
+
+    server.listen(function onListen () {
+      var addr = server.address()
+      var session = http2.connect('http://localhost:' + addr.port)
+      var request = session.request({ ':method': 'POST', ':path': '/' })
+
+      request.end('hello, world!')
+
+      request.on('response', function onResponse (headers) {
+        getRawBody(request, { encoding: true }, function (err, str) {
+          http2close(server, session, function onClose () {
+            assert.ifError(err)
+            assert.strictEqual(headers[':status'], 200)
             assert.strictEqual(str, 'hello, world!')
             done()
           })
@@ -61,10 +98,11 @@ describeHttp2('using http2 streams', function () {
 
       request.end('hello, world!')
 
-      request.on('response', function onResponse (res) {
+      request.on('response', function onResponse (headers) {
         getRawBody(request, { encoding: true }, function (err, str) {
           http2close(server, session, function onClose () {
             assert.ifError(err)
+            assert.strictEqual(headers[':status'], 500)
             assert.strictEqual(str, 'stream encoding should not be set')
             done()
           })
