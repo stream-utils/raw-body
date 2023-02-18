@@ -1,3 +1,8 @@
+unreleased
+==========
+
+  * Fix error message for non-stream argument
+
 2.5.1 / 2022-02-28
 ==================
 

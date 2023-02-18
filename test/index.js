@@ -22,6 +22,14 @@ var string = fs.readFileSync(file, 'utf8')
 global.Promise = global.Promise
 
 describe('Raw Body', function () {
+  it('should validate stream', function () {
+    assert.throws(function () { getRawBody() }, /argument stream is required/)
+    assert.throws(function () { getRawBody(null) }, /argument stream must be a stream/)
+    assert.throws(function () { getRawBody(42) }, /argument stream must be a stream/)
+    assert.throws(function () { getRawBody('str') }, /argument stream must be a stream/)
+    assert.throws(function () { getRawBody({}) }, /argument stream must be a stream/)
+  })
+
   it('should work without any options', function (done) {
     getRawBody(createStream(), function (err, buf) {
       assert.ifError(err)
