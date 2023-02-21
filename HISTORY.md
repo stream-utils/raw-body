@@ -1,5 +1,5 @@
-3.x
-===
+3.0.0-beta.1 / 2023-02-21
+=========================
 
   * Change TypeScript argument to `NodeJS.ReadableStream` interface
   * Drop support for Node.js 0.8
