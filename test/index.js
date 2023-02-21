@@ -398,6 +398,28 @@ describe('Raw Body', function () {
       })
     })
 
+    it('should decode UTF-32 string (LE BOM)', function (done) {
+      // BOM makes this LE
+      var stream = createStream(Buffer.from('fffe0000bf00000043000000f30000006d0000006f00000020000000650000007300000074000000e1000000730000003f000000', 'hex'))
+      var string = '¿Cómo estás?'
+      getRawBody(stream, 'utf-32', function (err, str) {
+        assert.ifError(err)
+        assert.strictEqual(str, string)
+        done()
+      })
+    })
+
+    it('should decode UTF-32 string (BE BOM)', function (done) {
+      // BOM makes this BE
+      var stream = createStream(Buffer.from('0000feff000000bf00000043000000f30000006d0000006f00000020000000650000007300000074000000e1000000730000003f', 'hex'))
+      var string = '¿Cómo estás?'
+      getRawBody(stream, 'utf-32', function (err, str) {
+        assert.ifError(err)
+        assert.strictEqual(str, string)
+        done()
+      })
+    })
+
     it('should correctly calculate the expected length', function (done) {
       var stream = createStream(Buffer.from('{"test":"å"}'))
 
