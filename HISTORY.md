@@ -1,5 +1,5 @@
-3.x
-===
+3.0.0 / 2024-07-25
+==================
 
   * deps: iconv-lite@0.6.3
     - Fix HKSCS encoding to prefer Big5 codes
