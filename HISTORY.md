@@ -1,3 +1,11 @@
+3.x
+===
+
+  * deps: iconv-lite@0.6.3
+    - Fix HKSCS encoding to prefer Big5 codes
+    - Fix minor issue in UTF-32 decoder's endianness detection code
+    - Update 'gb18030' encoding to :2005 edition
+
 3.0.0-beta.1 / 2023-02-21
 =========================
 
