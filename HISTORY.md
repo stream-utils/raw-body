@@ -1,3 +1,8 @@
+unreleased
+==================
+
+  * deps: remove `unpipe` and use native `stream.unpipe()`
+
 3.0.0 / 2024-07-25
 ==================
 
