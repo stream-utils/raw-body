@@ -1,3 +1,8 @@
+unreleased
+==================
+
+  * Breaking Change: Node.js 18 is the minimum supported version
+
 3.0.0 / 2024-07-25
 ==================
 
