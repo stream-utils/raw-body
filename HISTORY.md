@@ -1,3 +1,10 @@
+unreleased
+==================
+
+  * deps: iconv-lite@0.7.0
+    - Avoid false positives in encodingExists by using objects without a prototype
+    - Remove compatibility check for StringDecoder.end method
+
 3.0.0 / 2024-07-25
 ==================
 
