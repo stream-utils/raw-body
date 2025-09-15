@@ -1,3 +1,11 @@
+3.0.1 / 2025-09-03
+==================
+
+  * deps: iconv-lite@0.7.0
+    - Avoid false positives in encodingExists by using objects without a prototype
+    - Remove compatibility check for StringDecoder.end method
+  * Fix the engines field to reflect support for Node >= 0.10
+
 3.0.0 / 2024-07-25
 ==================
 
