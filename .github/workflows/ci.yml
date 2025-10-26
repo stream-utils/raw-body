@@ -193,7 +193,7 @@ jobs:
       shell: bash
       run: |
         if npm -ps ls nyc | grep -q nyc; then
-          npm run test-ci
+          npm run test:ci
           cp coverage/lcov.info "coverage/${{ matrix.name }}.lcov"
         else
           npm test
