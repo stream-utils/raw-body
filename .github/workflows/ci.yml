@@ -1,8 +1,19 @@
 name: ci
 
 on:
-- pull_request
-- push
+  pull_request:
+    branches:
+      - master
+  push:
+
+permissions:
+  contents: read
+
+# Cancel in progress workflows
+# in the scenario where we already had a run going for that PR/branch/tag but then triggered a new run
+concurrency:
+  group: "${{ github.workflow }} ✨ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
+  cancel-in-progress: true
 
 jobs:
   lint:
@@ -26,6 +37,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         name:
         - Node.js 0.10
