@@ -3,9 +3,12 @@
 This document outlines security procedures and general policies for the raw-body
 project.
 
-  * [Reporting a Bug or Security Vulnerability](#reporting-a-bug-or-security-vulnerability)
-  * [Disclosure Policy](#disclosure-policy)
-  * [Comments on this Policy](#comments-on-this-policy)
+- [Security Policies and Procedures](#security-policies-and-procedures)
+  - [Reporting a Bug or Security Vulnerability](#reporting-a-bug-or-security-vulnerability)
+    - [Reporting Security Bugs via GitHub Security Advisory](#reporting-security-bugs-via-github-security-advisory)
+    - [Third-Party Modules](#third-party-modules)
+  - [Disclosure Policy](#disclosure-policy)
+  - [Comments on this Policy](#comments-on-this-policy)
 
 ## Reporting a Bug or Security Vulnerability  
 
@@ -29,14 +32,6 @@ To report a vulnerability
 ([docs](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)):  
 1. Visit the **Security** tab of the affected repository on GitHub.  
 2. Click **Report a vulnerability** and follow the provided steps.  
-
-### Reporting via Email  
-
-Report security bugs by emailing the current owners of `raw-body`. This information can be found in the npm registry using the command `npm owner ls raw-body`
-
-To ensure a timely response, please include all relevant details directly in the email body rather than linking to external sources or attaching files.  
-
-The lead maintainer will acknowledge your email within 72 hours and provide an initial response outlining the next steps. The security team will keep you updated on the progress and may request additional details.  
 
 ### Third-Party Modules  
 
