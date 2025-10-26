@@ -1,13 +1,45 @@
 name: ci
 
 on:
-- pull_request
-- push
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+# Cancel in progress workflows
+# in the scenario where we already had a run going for that PR/branch/tag but then triggered a new run
+concurrency:
+  group: "${{ github.workflow }} ✨ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
+  cancel-in-progress: true
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts --include=dev
+
+      - name: Run lint
+        run: npm run lint
+
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         name:
         - Node.js 0.10
@@ -70,11 +102,13 @@ jobs:
 
         - name: Node.js 6.x
           node-version: "6.17"
-          npm-i: mocha@6.2.2 nyc@14.1.1
+          npm-version: "npm@3.8.6"
+          npm-i: mocha@5.2.0 nyc@11.9.0
 
         - name: Node.js 7.x
           node-version: "7.10"
-          npm-i: mocha@6.2.2 nyc@14.1.1
+          npm-version: "npm@3.8.6"
+          npm-i: mocha@5.2.0 nyc@11.9.0
 
         - name: Node.js 8.0
           node-version: "8.0"
@@ -153,6 +187,10 @@ jobs:
         nvm install --default ${{ matrix.node-version }}
         dirname "$(nvm which ${{ matrix.node-version }})" >> "$GITHUB_PATH"
 
+    - name: Npm version fixes
+      if: ${{matrix.npm-version != ''}}
+      run: npm install -g ${{ matrix.npm-version }}
+
     - name: Configure npm
       run: |
         if [[ "$(npm config get package-lock)" == "true" ]]; then
@@ -161,21 +199,12 @@ jobs:
           npm config set shrinkwrap false
         fi
 
+    - name: Remove npm module(s) ${{ matrix.npm-rm }}
+      run: npm rm --silent --save-dev neostandard @stylistic/eslint-plugin-js @stylistic/eslint-plugin eslint
+
     - name: Install npm module(s) ${{ matrix.npm-i }}
       run: npm install --save-dev ${{ matrix.npm-i }}
       if: matrix.npm-i != ''
-
-    - name: Setup Node.js version-specific dependencies
-      shell: bash
-      run: |
-        # eslint for linting
-        # - remove on Node.js < 12
-        if [[ "$(cut -d. -f1 <<< "${{ matrix.node-version }}")" -lt 12 ]]; then
-          node -pe 'Object.keys(require("./package").devDependencies).join("\n")' | \
-            grep -E '^eslint(-|$)' | \
-            sort -r | \
-            xargs -n1 npm rm --silent --save-dev
-        fi
 
     - name: Install Node.js dependencies
       run: npm install
@@ -193,15 +222,11 @@ jobs:
       shell: bash
       run: |
         if npm -ps ls nyc | grep -q nyc; then
-          npm run test-ci
+          npm run test:ci
           cp coverage/lcov.info "coverage/${{ matrix.name }}.lcov"
         else
           npm test
         fi
-
-    - name: Lint code
-      if: steps.list_env.outputs.eslint != ''
-      run: npm run lint
 
     - name: Upload code coverage
       uses: actions/upload-artifact@v5
