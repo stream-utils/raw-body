@@ -5,6 +5,8 @@ on:
     branches:
       - master
   push:
+    branches:
+      - master
 
 permissions:
   contents: read
@@ -100,10 +102,12 @@ jobs:
 
         - name: Node.js 6.x
           node-version: "6.17"
+          npm-version: "npm@3.8.6"
           npm-i: mocha@6.2.2 nyc@14.1.1
 
         - name: Node.js 7.x
           node-version: "7.10"
+          npm-version: "npm@3.8.6"
           npm-i: mocha@6.2.2 nyc@14.1.1
 
         - name: Node.js 8.0
@@ -182,6 +186,10 @@ jobs:
       run: |
         nvm install --default ${{ matrix.node-version }}
         dirname "$(nvm which ${{ matrix.node-version }})" >> "$GITHUB_PATH"
+
+    - name: Npm version fixes
+      if: ${{matrix.npm-version != ''}}
+      run: npm install -g ${{ matrix.npm-version }}
 
     - name: Configure npm
       run: |
