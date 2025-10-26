@@ -15,7 +15,9 @@ project.
 The `raw-body` team and community take all security vulnerabilities seriously. 
 Thank you for improving the security of raw-body and related projects. 
 We appreciate your efforts in responsible disclosure and will make every effort 
-to acknowledge your contributions.  
+to acknowledge your contributions. 
+
+A member of the team will acknowledge your report as soon as possible. These timelines may extend when our triage volunteers are away on holiday, particularly at the end of the year.
 
 After the initial response to your report, the owners commit to keeping you informed
 about the progress toward a fix and the final announcement, and they may request additional
