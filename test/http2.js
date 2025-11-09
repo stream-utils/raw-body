@@ -1,13 +1,9 @@
 var assert = require('assert')
 var getRawBody = require('..')
-var http2 = tryRequire('http2')
+var http2 = require('http2')
 var net = require('net')
 
-var describeHttp2 = !http2
-  ? describe.skip
-  : describe
-
-describeHttp2('using http2 streams', function () {
+describe('using http2 streams', function () {
   it('should read from compatibility api', function (done) {
     var server = http2.createServer(function onRequest (req, res) {
       getRawBody(req, { length: req.headers['content-length'] }, function (err, body) {
@@ -161,13 +157,5 @@ function http2close (server, session, callback) {
 
   function onSessionClose () {
     server.close(onServerClose)
-  }
-}
-
-function tryRequire (module) {
-  try {
-    return require(module)
-  } catch (e) {
-    return undefined
   }
 }
