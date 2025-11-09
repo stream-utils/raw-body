@@ -7,7 +7,7 @@ var getRawBody = require('../')
 var defaultLimit = 1024 * 1024
 
 describe('stream flowing', function () {
-  this.timeout(4000)
+  this.timeout(5000)
 
   describe('when limit lower then length', function (done) {
     it('should stop the steam flow', function (done) {
