@@ -16,7 +16,6 @@ var asyncHooks = tryRequireAsyncHooks()
 var bytes = require('bytes')
 var createError = require('http-errors')
 var iconv = require('iconv-lite')
-var unpipe = require('unpipe')
 
 /**
  * Module exports.
@@ -133,7 +132,7 @@ function getRawBody (stream, options, callback) {
 
 function halt (stream) {
   // unpipe everything from the stream
-  unpipe(stream)
+  stream.unpipe()
 
   // pause stream
   if (typeof stream.pause === 'function') {
