@@ -41,7 +41,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [18, 19, 20, 21, 22, 23, 24, 25]
+        node-version: [18.0.0, 18, 19, 20, 21, 22, 23, 24, 25]
         # Node.js release schedule: https://nodejs.org/en/about/releases/
     name: Node.js ${{ matrix.node-version }} - ${{matrix.os}}
     runs-on: ${{ matrix.os }}
@@ -53,10 +53,6 @@ jobs:
     - uses: actions/setup-node@v5
       with:
         node-version: ${{ matrix.node-version }}
-
-    - name: Npm version fixes
-      if: ${{matrix.npm-version != ''}}
-      run: npm install -g ${{ matrix.npm-version }}
 
     - name: Configure npm loglevel
       run: |

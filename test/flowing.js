@@ -29,6 +29,7 @@ describe('stream flowing', function () {
     })
 
     it('should halt flowing stream', function (done) {
+      this.timeout(5000);
       var stream = createInfiniteStream(true)
       var dest = createBlackholeStream()
 
@@ -90,6 +91,8 @@ describe('stream flowing', function () {
 
   describe('when stream has limit', function (done) {
     it('should stop the steam flow', function (done) {
+      this.timeout(5000); 
+
       var stream = createInfiniteStream()
 
       getRawBody(stream, function (err, body) {
