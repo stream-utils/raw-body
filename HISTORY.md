@@ -1,6 +1,7 @@
 unreleased
 ==================
 
+  * deps: remove `unpipe` and use native `stream.unpipe()`
   * Breaking Change: Node.js 18 is the minimum supported version
 
 3.0.2 / 2025-11-21
