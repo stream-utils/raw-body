@@ -3,19 +3,19 @@ name: ci
 on:
   pull_request:
     branches:
-      - master
+      - v4
   push:
     branches:
-      - master
-
-permissions:
-  contents: read
+      - v4
 
 # Cancel in progress workflows
 # in the scenario where we already had a run going for that PR/branch/tag but then triggered a new run
 concurrency:
   group: "${{ github.workflow }} ✨ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   lint:
@@ -37,196 +37,41 @@ jobs:
         run: npm run lint
 
   test:
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        name:
-        - Node.js 0.10
-        - Node.js 0.12
-        - io.js 1.x
-        - io.js 2.x
-        - io.js 3.x
-        - Node.js 4.x
-        - Node.js 5.x
-        - Node.js 6.x
-        - Node.js 7.x
-        - Node.js 8.0 # test early async_hooks
-        - Node.js 8.x
-        - Node.js 9.x
-        - Node.js 10.x
-        - Node.js 11.x
-        - Node.js 12.x
-        - Node.js 13.x
-        - Node.js 14.x
-        - Node.js 15.x
-        - Node.js 16.x
-        - Node.js 17.x
-        - Node.js 18.x
-        - Node.js 19.x
-        - Node.js 20.x
-        - Node.js 21.x
-        - Node.js 22.x
-        - Node.js 23.x
-        - Node.js 24.x
-        - Node.js 25.x
-
-        include:
-        - name: Node.js 0.10
-          node-version: "0.10"
-          npm-i: mocha@2.5.3 nyc@10.3.2
-
-        - name: Node.js 0.12
-          node-version: "0.12"
-          npm-i: mocha@3.5.3 nyc@10.3.2
-
-        - name: io.js 1.x
-          node-version: "1.8"
-          npm-i: mocha@3.5.3 nyc@10.3.2
-
-        - name: io.js 2.x
-          node-version: "2.5"
-          npm-i: mocha@3.5.3 nyc@10.3.2
-
-        - name: io.js 3.x
-          node-version: "3.3"
-          npm-i: mocha@3.5.3 nyc@10.3.2
-
-        - name: Node.js 4.x
-          node-version: "4.9"
-          npm-i: mocha@5.2.0 nyc@11.9.0
-
-        - name: Node.js 5.x
-          node-version: "5.12"
-          npm-i: mocha@5.2.0 nyc@11.9.0
-
-        - name: Node.js 6.x
-          node-version: "6.17"
-          npm-version: "npm@3.8.6"
-          npm-i: mocha@5.2.0 nyc@11.9.0
-
-        - name: Node.js 7.x
-          node-version: "7.10"
-          npm-version: "npm@3.8.6"
-          npm-i: mocha@5.2.0 nyc@11.9.0
-
-        - name: Node.js 8.0
-          node-version: "8.0"
-          npm-i: mocha@6.2.2 nyc@14.1.1
-
-        - name: Node.js 8.x
-          node-version: "8.17"
-          npm-i: mocha@7.2.0 nyc@14.1.1
-
-        - name: Node.js 9.x
-          node-version: "9.11"
-          npm-i: mocha@7.2.0 nyc@14.1.1
-
-        - name: Node.js 10.x
-          node-version: "10.24"
-          npm-i: mocha@8.4.0 nyc@15.1.0
-
-        - name: Node.js 11.x
-          node-version: "11.15"
-          npm-i: mocha@8.4.0 nyc@15.1.0
-
-        - name: Node.js 12.x
-          node-version: "12.22"
-          npm-i: mocha@9.2.2 nyc@15.1.0
-
-        - name: Node.js 13.x
-          node-version: "13.14"
-          npm-i: mocha@9.2.2 nyc@15.1.0
-
-        - name: Node.js 14.x
-          node-version: "14.21"
-          npm-i: nyc@15.1.0
-
-        - name: Node.js 15.x
-          node-version: "15.14"
-          npm-i: nyc@15.1.0
-
-        - name: Node.js 16.x
-          node-version: "16.19"
-          npm-i: nyc@15.1.0
-
-        - name: Node.js 17.x
-          node-version: "17.9"
-          npm-i: nyc@15.1.0
-
-        - name: Node.js 18.x
-          node-version: "18.19"
-
-        - name: Node.js 19.x
-          node-version: "19.9"
-
-        - name: Node.js 20.x
-          node-version: "20"
-
-        - name: Node.js 21.x
-          node-version: "21"
-
-        - name: Node.js 22.x
-          node-version: "22"
-
-        - name: Node.js 23.x
-          node-version: "23"
-
-        - name: Node.js 24.x
-          node-version: "24"  
-
-        - name: Node.js 25.x
-          node-version: "25"  
-
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [18.0.0, 18, 19, 20, 21, 22, 23, 24, 25]
+        # Node.js release schedule: https://nodejs.org/en/about/releases/
+    name: Node.js ${{ matrix.node-version }} - ${{matrix.os}}
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v5
+      with:
+        persist-credentials: false
 
-    - name: Install Node.js ${{ matrix.node-version }}
-      shell: bash -eo pipefail -l {0}
+    - uses: actions/setup-node@v5
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Configure npm loglevel
       run: |
-        nvm install --default ${{ matrix.node-version }}
-        dirname "$(nvm which ${{ matrix.node-version }})" >> "$GITHUB_PATH"
-
-    - name: Npm version fixes
-      if: ${{matrix.npm-version != ''}}
-      run: npm install -g ${{ matrix.npm-version }}
-
-    - name: Configure npm
-      run: |
-        if [[ "$(npm config get package-lock)" == "true" ]]; then
-          npm config set package-lock false
-        else
-          npm config set shrinkwrap false
-        fi
-
-    - name: Remove npm module(s) ${{ matrix.npm-rm }}
-      run: npm rm --silent --save-dev neostandard @stylistic/eslint-plugin-js @stylistic/eslint-plugin eslint
-
-    - name: Install npm module(s) ${{ matrix.npm-i }}
-      run: npm install --save-dev ${{ matrix.npm-i }}
-      if: matrix.npm-i != ''
+        npm config set loglevel error
+      shell: bash
 
     - name: Install Node.js dependencies
       run: npm install
 
-    - name: List environment
-      id: list_env
-      shell: bash
+    - name: Output Node and NPM versions
       run: |
-        echo "node@$(node -v)"
-        echo "npm@$(npm -v)"
-        npm -s ls ||:
-        (npm -s ls --depth=0 ||:) | awk -F'[ @]' 'NR>1 && $2 { print $2 "=" $3 }' >> "$GITHUB_OUTPUT"
+        echo "Node.js version: $(node -v)"
+        echo "NPM version: $(npm -v)"
 
     - name: Run tests
       shell: bash
       run: |
-        if npm -ps ls nyc | grep -q nyc; then
-          npm run test:ci
-          cp coverage/lcov.info "coverage/${{ matrix.name }}.lcov"
-        else
-          npm test
-        fi
+        npm run test:ci
+        cp coverage/lcov.info "coverage/${{ matrix.name }}.lcov"
 
     - name: Upload code coverage
       uses: actions/upload-artifact@v5
@@ -238,11 +83,14 @@ jobs:
   coverage:
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
     steps:
     - uses: actions/checkout@v5
-
+      with:
+        persist-credentials: false
     - name: Install lcov
-      shell: bash
       run: sudo apt-get -y install lcov
 
     - name: Collect coverage reports
