@@ -1,25 +1,15 @@
 var assert = require('assert')
-var asyncHooks = tryRequire('async_hooks')
+var asyncHooks = require('async_hooks')
 var fs = require('fs')
 var getRawBody = require('..')
 var path = require('path')
-
-var Buffer = require('safe-buffer').Buffer
+var Promise = global.Promise
 var EventEmitter = require('events').EventEmitter
-var Promise = global.Promise || require('bluebird')
-var Readable = require('readable-stream').Readable
-
-var describeAsyncHooks = typeof asyncHooks.AsyncLocalStorage === 'function'
-  ? describe
-  : describe.skip
+var Readable = require('stream').Readable
 
 var file = path.join(__dirname, 'index.js')
 var length = fs.statSync(file).size
 var string = fs.readFileSync(file, 'utf8')
-
-// Add Promise to mocha's global list
-// eslint-disable-next-line no-self-assign
-global.Promise = global.Promise
 
 describe('Raw Body', function () {
   it('should validate stream', function () {
@@ -285,7 +275,7 @@ describe('Raw Body', function () {
     })
   })
 
-  describeAsyncHooks('with async local storage', function () {
+  describe('with async local storage', function () {
     it('should presist store in callback', function (done) {
       var asyncLocalStorage = new asyncHooks.AsyncLocalStorage()
       var store = { foo: 'bar' }
@@ -476,12 +466,4 @@ function createStream (buf) {
 
 function throwExpectedError () {
   throw new Error('expected error')
-}
-
-function tryRequire (name) {
-  try {
-    return require(name)
-  } catch (e) {
-    return {}
-  }
 }
