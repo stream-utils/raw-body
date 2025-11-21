@@ -12,7 +12,7 @@
  * @private
  */
 
-var asyncHooks = tryRequireAsyncHooks()
+const { AsyncResource } = require('async_hooks')
 var bytes = require('bytes')
 var createError = require('http-errors')
 var iconv = require('iconv-lite')
@@ -112,7 +112,7 @@ function getRawBody (stream, options, callback) {
 
   if (done) {
     // classic callback style
-    return readStream(stream, encoding, length, limit, wrap(done))
+    return readStream(stream, encoding, length, limit, AsyncResource.bind(done, done.name || 'bound-anonymous-fn', null))
   }
 
   return new Promise(function executor (resolve, reject) {
@@ -296,40 +296,4 @@ function readStream (stream, encoding, length, limit, callback) {
     stream.removeListener('error', onEnd)
     stream.removeListener('close', cleanup)
   }
-}
-
-/**
- * Try to require async_hooks
- * @private
- */
-
-function tryRequireAsyncHooks () {
-  try {
-    return require('async_hooks')
-  } catch (e) {
-    return {}
-  }
-}
-
-/**
- * Wrap function with async resource, if possible.
- * AsyncResource.bind static method backported.
- * @private
- */
-
-function wrap (fn) {
-  var res
-
-  // create anonymous resource
-  if (asyncHooks.AsyncResource) {
-    res = new asyncHooks.AsyncResource(fn.name || 'bound-anonymous-fn')
-  }
-
-  // incompatible node.js
-  if (!res || !res.runInAsyncScope) {
-    return fn
-  }
-
-  // return bound function
-  return res.runInAsyncScope.bind(res, fn, null)
 }
