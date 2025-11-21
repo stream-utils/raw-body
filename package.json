@@ -10,10 +10,10 @@
   "license": "MIT",
   "repository": "stream-utils/raw-body",
   "dependencies": {
-    "bytes": "3.1.2",
-    "http-errors": "2.0.0",
-    "iconv-lite": "0.7.0",
-    "unpipe": "1.0.0"
+    "bytes": "~3.1.2",
+    "http-errors": "~2.0.0",
+    "iconv-lite": "~0.7.0",
+    "unpipe": "~1.0.0"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "^5.1.0",
