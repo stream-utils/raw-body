@@ -1,5 +1,5 @@
-unreleased
-==================
+3.0.2 / 2025-11-21
+======================
 
   * deps: http-errors@2.0.1
   * deps: use tilde notation for dependencies
