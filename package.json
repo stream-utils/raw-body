@@ -30,10 +30,8 @@
     "node": ">= 0.10"
   },
   "files": [
-    "HISTORY.md",
     "LICENSE",
     "README.md",
-    "SECURITY.md",
     "index.d.ts",
     "index.js"
   ],
