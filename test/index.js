@@ -186,6 +186,24 @@ describe('Raw Body', function () {
     })
   })
 
+  it('should handle length as string number', function (done) {
+    var testData = 'test'
+    var expectedLength = testData.length
+
+    var stream = new Readable()
+    stream.push(testData)
+    stream.push(null)
+
+    getRawBody(stream, {
+      length: String(expectedLength)
+    }, function (err, buf) {
+      assert.ifError(err)
+      assert.ok(buf)
+      assert.strictEqual(buf.length, expectedLength)
+      done()
+    })
+  })
+
   it('should work with {"test":"å"}', function (done) {
     // https://github.com/visionmedia/express/issues/1816
 
