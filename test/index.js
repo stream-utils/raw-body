@@ -186,6 +186,36 @@ describe('Raw Body', function () {
     })
   })
 
+  it('should handle invalid length values (Infinity, negative, NaN)', function (done) {
+    var testData = 'test data'
+    var expectedLength = testData.length
+
+    var stream = new Readable()
+    stream.push(testData)
+    stream.push(null)
+
+    getRawBody(stream, {
+      length: Infinity
+    }, function (err, buf) {
+      assert.ifError(err)
+      assert.ok(buf)
+      assert.strictEqual(buf.length, expectedLength)
+
+      var stream2 = new Readable()
+      stream2.push(testData)
+      stream2.push(null)
+
+      getRawBody(stream2, {
+        length: -1
+      }, function (err2, buf2) {
+        assert.ifError(err2)
+        assert.ok(buf2)
+        assert.strictEqual(buf2.length, expectedLength)
+        done()
+      })
+    })
+  })
+
   it('should work with {"test":"å"}', function (done) {
     // https://github.com/visionmedia/express/issues/1816
 

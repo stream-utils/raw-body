@@ -107,9 +107,14 @@ function getRawBody (stream, options, callback) {
   var limit = bytes.parse(opts.limit)
 
   // convert the expected length to an integer
-  var length = opts.length != null && !isNaN(opts.length)
-    ? parseInt(opts.length, 10)
-    : null
+  var length = null
+  if (opts.length != null && !isNaN(opts.length)) {
+    var parsedLength = parseInt(opts.length, 10)
+
+    if (!isNaN(parsedLength) && isFinite(parsedLength) && parsedLength >= 0) {
+      length = parsedLength
+    }
+  }
 
   if (done) {
     // classic callback style
