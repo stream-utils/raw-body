@@ -13,9 +13,9 @@
  */
 
 const { AsyncResource } = require('async_hooks')
-var bytes = require('bytes')
-var createError = require('http-errors')
-var iconv = require('iconv-lite')
+const bytes = require('bytes')
+const createError = require('http-errors')
+const iconv = require('iconv-lite')
 
 /**
  * Module exports.
@@ -29,7 +29,7 @@ module.exports = getRawBody
  * @private
  */
 
-var ICONV_ENCODING_MESSAGE_REGEXP = /^Encoding not recognized: /
+const ICONV_ENCODING_MESSAGE_REGEXP = /^Encoding not recognized: /
 
 /**
  * Get the decoder for a given encoding.
@@ -49,7 +49,7 @@ function getDecoder (encoding) {
 
     // the encoding was not found
     throw createError(415, 'specified encoding unsupported', {
-      encoding: encoding,
+      encoding,
       type: 'encoding.unsupported'
     })
   }
@@ -65,8 +65,8 @@ function getDecoder (encoding) {
  */
 
 function getRawBody (stream, options, callback) {
-  var done = callback
-  var opts = options || {}
+  let done = callback
+  let opts = options || {}
 
   // light validation
   if (stream === undefined) {
@@ -98,15 +98,15 @@ function getRawBody (stream, options, callback) {
   }
 
   // get encoding
-  var encoding = opts.encoding !== true
+  const encoding = opts.encoding !== true
     ? opts.encoding
     : 'utf-8'
 
   // convert the limit to an integer
-  var limit = bytes.parse(opts.limit)
+  const limit = bytes.parse(opts.limit)
 
   // convert the expected length to an integer
-  var length = opts.length != null && !isNaN(opts.length)
+  const length = opts.length != null && !isNaN(opts.length)
     ? parseInt(opts.length, 10)
     : null
 
@@ -152,8 +152,9 @@ function halt (stream) {
  */
 
 function readStream (stream, encoding, length, limit, callback) {
-  var complete = false
-  var sync = true
+  let buffer
+  let complete = false
+  let sync = true
 
   // check the length and limit options.
   // note: we intentionally leave the stream paused,
@@ -161,8 +162,8 @@ function readStream (stream, encoding, length, limit, callback) {
   if (limit !== null && length !== null && length > limit) {
     return done(createError(413, 'request entity too large', {
       expected: length,
-      length: length,
-      limit: limit,
+      length,
+      limit,
       type: 'entity.too.large'
     }))
   }
@@ -172,7 +173,7 @@ function readStream (stream, encoding, length, limit, callback) {
   //   stream._decoder: streams1
   //   state.encoding: streams2
   //   state.decoder: streams2, specifically < 0.10.6
-  var state = stream._readableState
+  const state = stream._readableState
   if (stream._decoder || (state && (state.encoding || state.decoder))) {
     // developer error
     return done(createError(500, 'stream encoding should not be set', {
@@ -186,8 +187,8 @@ function readStream (stream, encoding, length, limit, callback) {
     }))
   }
 
-  var received = 0
-  var decoder
+  let received = 0
+  let decoder
 
   try {
     decoder = getDecoder(encoding)
@@ -195,7 +196,7 @@ function readStream (stream, encoding, length, limit, callback) {
     return done(err)
   }
 
-  var buffer = decoder
+  buffer = decoder
     ? ''
     : []
 
@@ -210,10 +211,10 @@ function readStream (stream, encoding, length, limit, callback) {
   sync = false
 
   function done () {
-    var args = new Array(arguments.length)
+    const args = new Array(arguments.length)
 
     // copy arguments
-    for (var i = 0; i < args.length; i++) {
+    for (let i = 0; i < args.length; i++) {
       args[i] = arguments[i]
     }
 
@@ -244,8 +245,8 @@ function readStream (stream, encoding, length, limit, callback) {
     done(createError(400, 'request aborted', {
       code: 'ECONNABORTED',
       expected: length,
-      length: length,
-      received: received,
+      length,
+      received,
       type: 'request.aborted'
     }))
   }
@@ -257,8 +258,8 @@ function readStream (stream, encoding, length, limit, callback) {
 
     if (limit !== null && received > limit) {
       done(createError(413, 'request entity too large', {
-        limit: limit,
-        received: received,
+        limit,
+        received,
         type: 'entity.too.large'
       }))
     } else if (decoder) {
@@ -275,12 +276,12 @@ function readStream (stream, encoding, length, limit, callback) {
     if (length !== null && received !== length) {
       done(createError(400, 'request size did not match content length', {
         expected: length,
-        length: length,
-        received: received,
+        length,
+        received,
         type: 'request.size.invalid'
       }))
     } else {
-      var string = decoder
+      const string = decoder
         ? buffer + (decoder.end() || '')
         : Buffer.concat(buffer)
       done(null, string)

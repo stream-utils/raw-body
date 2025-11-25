@@ -1,10 +1,10 @@
-var assert = require('assert')
-var getRawBody = require('..')
-var Readable = require('stream').Readable
+const assert = require('assert')
+const getRawBody = require('..')
+const Readable = require('stream').Readable
 
 describe('using native streams', function () {
   it('should read contents', function (done) {
-    var stream = createStream(Buffer.from('hello, streams!'))
+    const stream = createStream(Buffer.from('hello, streams!'))
 
     getRawBody(stream, function (err, buf) {
       assert.ifError(err)
@@ -14,7 +14,7 @@ describe('using native streams', function () {
   })
 
   it('should read pre-buffered contents', function (done) {
-    var stream = createStream(Buffer.from('hello, streams!'))
+    const stream = createStream(Buffer.from('hello, streams!'))
     stream.push('oh, ')
 
     getRawBody(stream, function (err, buf) {
@@ -25,7 +25,7 @@ describe('using native streams', function () {
   })
 
   it('should stop the stream on limit', function (done) {
-    var stream = createStream(Buffer.from('hello, streams!'))
+    const stream = createStream(Buffer.from('hello, streams!'))
 
     getRawBody(stream, { limit: 2 }, function (err, buf) {
       assert.ok(err)
@@ -36,7 +36,7 @@ describe('using native streams', function () {
   })
 
   it('should throw if stream is not readable', function (done) {
-    var stream = createStream(Buffer.from('hello, streams!'))
+    const stream = createStream(Buffer.from('hello, streams!'))
 
     stream.resume()
     stream.on('end', function () {
@@ -52,7 +52,7 @@ describe('using native streams', function () {
 })
 
 function createStream (buf) {
-  var stream = new Readable()
+  const stream = new Readable()
   stream._read = function () {
     stream.push(buf)
     stream.push(null)

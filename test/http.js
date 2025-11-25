@@ -1,11 +1,11 @@
-var assert = require('assert')
-var getRawBody = require('..')
-var http = require('http')
-var net = require('net')
+const assert = require('assert')
+const getRawBody = require('..')
+const http = require('http')
+const net = require('net')
 
 describe('using http streams', function () {
   it('should read body streams', function (done) {
-    var server = http.createServer(function onRequest (req, res) {
+    const server = http.createServer(function onRequest (req, res) {
       getRawBody(req, { length: req.headers['content-length'] }, function (err, body) {
         if (err) {
           req.resume()
@@ -18,8 +18,8 @@ describe('using http streams', function () {
     })
 
     server.listen(function onListen () {
-      var addr = server.address()
-      var client = http.request({ method: 'POST', port: addr.port })
+      const addr = server.address()
+      const client = http.request({ method: 'POST', port: addr.port })
 
       client.end('hello, world!')
 
@@ -36,7 +36,7 @@ describe('using http streams', function () {
   })
 
   it('should throw if stream encoding is set', function (done) {
-    var server = http.createServer(function onRequest (req, res) {
+    const server = http.createServer(function onRequest (req, res) {
       req.setEncoding('utf8')
       getRawBody(req, { length: req.headers['content-length'] }, function (err, body) {
         if (err) {
@@ -50,8 +50,8 @@ describe('using http streams', function () {
     })
 
     server.listen(function onListen () {
-      var addr = server.address()
-      var client = http.request({ method: 'POST', port: addr.port })
+      const addr = server.address()
+      const client = http.request({ method: 'POST', port: addr.port })
 
       client.end('hello, world!')
 
@@ -68,7 +68,7 @@ describe('using http streams', function () {
   })
 
   it('should throw if stream is not readable', function (done) {
-    var server = http.createServer(function onRequest (req, res) {
+    const server = http.createServer(function onRequest (req, res) {
       getRawBody(req, { length: req.headers['content-length'] }, function (err) {
         if (err) {
           req.resume()
@@ -90,8 +90,8 @@ describe('using http streams', function () {
     })
 
     server.listen(function onListen () {
-      var addr = server.address()
-      var client = http.request({ method: 'POST', port: addr.port })
+      const addr = server.address()
+      const client = http.request({ method: 'POST', port: addr.port })
 
       client.end('hello, world!')
 
@@ -108,8 +108,8 @@ describe('using http streams', function () {
   })
 
   it('should throw if connection ends', function (done) {
-    var socket
-    var server = http.createServer(function onRequest (req, res) {
+    let socket
+    const server = http.createServer(function onRequest (req, res) {
       getRawBody(req, { length: req.headers['content-length'] }, function (err, body) {
         server.close()
         assert.ok(err)
