@@ -1,5 +1,6 @@
-unreleased
+2.5.3 / 2025-11-25
 ==================
+
   * deps: http-errors@2.0.1
     - deps: statuses@2.0.2
     - deps: use tilde notation for dependencies
