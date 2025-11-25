@@ -152,6 +152,7 @@ function halt (stream) {
  */
 
 function readStream (stream, encoding, length, limit, callback) {
+  let buffer
   let complete = false
   let sync = true
 
@@ -195,7 +196,7 @@ function readStream (stream, encoding, length, limit, callback) {
     return done(err)
   }
 
-  let buffer = decoder
+  buffer = decoder
     ? ''
     : []
 
