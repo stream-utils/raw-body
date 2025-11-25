@@ -1,11 +1,11 @@
-var assert = require('assert')
-var getRawBody = require('..')
-var http2 = require('http2')
-var net = require('net')
+const assert = require('assert')
+const getRawBody = require('..')
+const http2 = require('http2')
+const net = require('net')
 
 describe('using http2 streams', function () {
   it('should read from compatibility api', function (done) {
-    var server = http2.createServer(function onRequest (req, res) {
+    const server = http2.createServer(function onRequest (req, res) {
       getRawBody(req, { length: req.headers['content-length'] }, function (err, body) {
         if (err) {
           req.resume()
@@ -18,9 +18,9 @@ describe('using http2 streams', function () {
     })
 
     server.listen(function onListen () {
-      var addr = server.address()
-      var session = http2.connect('http://localhost:' + addr.port)
-      var request = session.request({ ':method': 'POST', ':path': '/' })
+      const addr = server.address()
+      const session = http2.connect('http://localhost:' + addr.port)
+      const request = session.request({ ':method': 'POST', ':path': '/' })
 
       request.end('hello, world!')
 
@@ -38,7 +38,7 @@ describe('using http2 streams', function () {
   })
 
   it('should read body streams', function (done) {
-    var server = http2.createServer()
+    const server = http2.createServer()
 
     server.on('stream', function onStream (stream, headers) {
       getRawBody(stream, { length: headers['content-length'] }, function (err, body) {
@@ -54,9 +54,9 @@ describe('using http2 streams', function () {
     })
 
     server.listen(function onListen () {
-      var addr = server.address()
-      var session = http2.connect('http://localhost:' + addr.port)
-      var request = session.request({ ':method': 'POST', ':path': '/' })
+      const addr = server.address()
+      const session = http2.connect('http://localhost:' + addr.port)
+      const request = session.request({ ':method': 'POST', ':path': '/' })
 
       request.end('hello, world!')
 
@@ -74,7 +74,7 @@ describe('using http2 streams', function () {
   })
 
   it('should throw if stream encoding is set', function (done) {
-    var server = http2.createServer(function onRequest (req, res) {
+    const server = http2.createServer(function onRequest (req, res) {
       req.setEncoding('utf8')
       getRawBody(req, { length: req.headers['content-length'] }, function (err, body) {
         if (err) {
@@ -88,9 +88,9 @@ describe('using http2 streams', function () {
     })
 
     server.listen(function onListen () {
-      var addr = server.address()
-      var session = http2.connect('http://localhost:' + addr.port)
-      var request = session.request({ ':method': 'POST', ':path': '/' })
+      const addr = server.address()
+      const session = http2.connect('http://localhost:' + addr.port)
+      const request = session.request({ ':method': 'POST', ':path': '/' })
 
       request.end('hello, world!')
 
@@ -108,8 +108,8 @@ describe('using http2 streams', function () {
   })
 
   it('should throw if connection ends', function (done) {
-    var socket
-    var server = http2.createServer(function onRequest (req, res) {
+    let socket
+    const server = http2.createServer(function onRequest (req, res) {
       getRawBody(req, { length: req.headers['content-length'] }, function (err, body) {
         server.close()
         assert.ok(err)
@@ -126,14 +126,14 @@ describe('using http2 streams', function () {
     })
 
     server.listen(function onListen () {
-      var addr = server.address()
-      var session = http2.connect('http://localhost:' + addr.port, {
+      const addr = server.address()
+      const session = http2.connect('http://localhost:' + addr.port, {
         createConnection: function (authority) {
           return (socket = net.connect(authority.port, authority.hostname))
         }
       })
 
-      var request = session.request({
+      const request = session.request({
         ':method': 'POST',
         ':path': '/',
         'content-length': '50'

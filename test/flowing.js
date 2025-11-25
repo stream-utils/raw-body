@@ -1,17 +1,17 @@
-var assert = require('assert')
-var Readable = require('stream').Readable
-var Writable = require('stream').Writable
+const assert = require('assert')
+const Readable = require('stream').Readable
+const Writable = require('stream').Writable
 
-var getRawBody = require('../')
+const getRawBody = require('../')
 
-var defaultLimit = 1024 * 1024
+const defaultLimit = 1024 * 1024
 
 describe('stream flowing', function () {
   this.timeout(5000)
 
   describe('when limit lower then length', function (done) {
     it('should stop the steam flow', function (done) {
-      var stream = createInfiniteStream()
+      const stream = createInfiniteStream()
 
       getRawBody(stream, {
         limit: defaultLimit,
@@ -31,8 +31,8 @@ describe('stream flowing', function () {
     })
 
     it('should halt flowing stream', function (done) {
-      var stream = createInfiniteStream(true)
-      var dest = createBlackholeStream()
+      const stream = createInfiniteStream(true)
+      const dest = createBlackholeStream()
 
       // pipe the stream
       stream.pipe(dest)
@@ -54,7 +54,7 @@ describe('stream flowing', function () {
 
   describe('when stream has encoding set', function (done) {
     it('should stop the steam flow', function (done) {
-      var stream = createInfiniteStream()
+      const stream = createInfiniteStream()
       stream.setEncoding('utf8')
 
       getRawBody(stream, {
@@ -73,7 +73,7 @@ describe('stream flowing', function () {
 
   describe('when stream has limit', function (done) {
     it('should stop the steam flow', function (done) {
-      var stream = createInfiniteStream()
+      const stream = createInfiniteStream()
 
       getRawBody(stream, {
         limit: defaultLimit
@@ -92,7 +92,7 @@ describe('stream flowing', function () {
 
   describe('when stream has limit', function (done) {
     it('should stop the steam flow', function (done) {
-      var stream = createInfiniteStream()
+      const stream = createInfiniteStream()
 
       getRawBody(stream, function (err, body) {
         assert.ok(err)
@@ -110,13 +110,13 @@ describe('stream flowing', function () {
 })
 
 function createChunk () {
-  var base = Math.random().toString(32)
-  var KB_4 = 32 * 4
-  var KB_8 = KB_4 * 2
-  var KB_16 = KB_8 * 2
-  var KB_64 = KB_16 * 4
+  const base = Math.random().toString(32)
+  const KB_4 = 32 * 4
+  const KB_8 = KB_4 * 2
+  const KB_16 = KB_8 * 2
+  const KB_64 = KB_16 * 4
 
-  var rand = Math.random()
+  const rand = Math.random()
   if (rand < 0.25) {
     return repeat(base, KB_4)
   } else if (rand < 0.5) {
@@ -133,7 +133,7 @@ function createChunk () {
 }
 
 function createBlackholeStream () {
-  var stream = new Writable()
+  const stream = new Writable()
   stream._write = function (chunk, encoding, cb) {
     cb()
   }
@@ -142,12 +142,12 @@ function createBlackholeStream () {
 }
 
 function createInfiniteStream (paused) {
-  var stream = new Readable()
+  const stream = new Readable()
   stream._read = function () {
-    var rand = 2 + Math.floor(Math.random() * 10)
+    const rand = 2 + Math.floor(Math.random() * 10)
 
     setTimeout(function () {
-      for (var i = 0; i < rand; i++) {
+      for (let i = 0; i < rand; i++) {
         stream.push(createChunk())
       }
     }, 100)
