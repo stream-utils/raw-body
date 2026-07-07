@@ -144,8 +144,7 @@ function encodingSetError () {
  * @param {number} length
  * @param {number} received
  * @param {function} done
- * @param {number} [total] exact buffered byte count, when known,
- *   so Buffer.concat can skip re-summing the chunk lengths
+ * @param {number} [total] exact byte count, when known
  * @private
  */
 
@@ -456,18 +455,16 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
   read()
 
   function read () {
-    // note: not .catch — onError must only see read() rejections;
-    // a throw from the user callback inside onRead would otherwise
-    // be misread as a stream error and invoke the callback again
+    // not .catch: onError must only see read() rejections,
+    // never throws from the user callback inside onRead
     reader.read().then(onRead, onError)
   }
 
   function onError (err) {
-    // map aborts to the same error the node path produces:
-    // undici and Readable.toWeb error the stream with an
-    // AbortError; an aborted node request bridged with
-    // Readable.toWeb surfaces its ECONNRESET instead
-    if (err && (err.name === 'AbortError' || err.code === 'ECONNRESET')) {
+    // map aborts (undici's AbortError, node http's ECONNRESET
+    // 'aborted') like the node path; other resets pass through
+    if (err && (err.name === 'AbortError' ||
+      (err.code === 'ECONNRESET' && err.message === 'aborted'))) {
       return done(abortedError(length, received, err))
     }
 
@@ -475,9 +472,8 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
       return done(err)
     }
 
-    // a web stream may error with any value — a string reason,
-    // an object, or nothing at all (controller.error() without
-    // arguments): normalize, so callers always get an Error
+    // a web stream may error with any value, or none at all:
+    // normalize, so callers always get an Error
     done(new Error('stream error', { cause: err }))
   }
 
@@ -498,8 +494,7 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
   }
 
   function onRead (result) {
-    // received counts exact bytes on this path (string chunks
-    // are converted before counting), unlike the node path
+    // received is an exact byte count on this path
     if (result.done) return finish(decoder, buffer, length, received, done, received)
 
     // a stream of strings is already decoded, so decoding it
@@ -523,13 +518,10 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
     } else {
       try {
         if (decoder) {
-          // the decoder consumes the chunk immediately,
-          // so the zero-copy view is safe here
+          // consumed immediately: the zero-copy view is safe
           buffer += decoder.write(chunk)
         } else {
-          // copy: the producer may legally reuse the chunk's
-          // memory after enqueuing it, and this view is kept
-          // until the stream ends
+          // copy: the producer may reuse the chunk's memory
           buffer.push(Buffer.from(chunk))
         }
       } catch (err) {

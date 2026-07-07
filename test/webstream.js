@@ -1,7 +1,13 @@
 const assert = require('assert')
 const getRawBody = require('..')
 const http = require('http')
+const net = require('net')
 const { Readable } = require('stream')
+
+// socket.resetAndDestroy() requires node >= 18.3
+const itLiveReset = typeof net.Socket.prototype.resetAndDestroy === 'function'
+  ? it
+  : it.skip
 
 describe('using web streams', function () {
   it('should read a ReadableStream into a buffer', async function () {
@@ -263,6 +269,51 @@ describe('using web streams', function () {
       req.write('partial')
 
       setTimeout(function () { req.destroy() }, 20)
+    })
+  })
+
+  it('should not map non-abort connection resets to request.aborted', async function () {
+    // a raw socket reset is a transport failure, not a client
+    // abort: the node path passes it through, so must this one.
+    // this is the exact error a net.Socket read produces on a
+    // TCP RST (recreated: producing a live RST needs
+    // socket.resetAndDestroy, which requires node >= 18.3)
+    const reset = new Error('read ECONNRESET')
+    reset.code = 'ECONNRESET'
+
+    const stream = new ReadableStream({
+      start (controller) {
+        controller.error(reset)
+      }
+    })
+
+    await assert.rejects(getRawBody(stream), function (err) {
+      assert.strictEqual(err, reset)
+      assert.notStrictEqual(err.type, 'request.aborted')
+      return true
+    })
+  })
+
+  itLiveReset('should pass through a live socket reset unmapped', function (done) {
+    const server = net.createServer(function (socket) {
+      socket.write('partial')
+      setTimeout(function () { socket.resetAndDestroy() }, 10)
+    })
+
+    server.listen(0, function () {
+      const socket = net.connect(server.address().port)
+
+      socket.on('connect', function () {
+        getRawBody(Readable.toWeb(socket), function (err) {
+          server.close()
+
+          assert.ok(err)
+          assert.strictEqual(err.code, 'ECONNRESET')
+          assert.strictEqual(err.message, 'read ECONNRESET')
+          assert.notStrictEqual(err.type, 'request.aborted')
+          done()
+        })
+      })
     })
   })
 
