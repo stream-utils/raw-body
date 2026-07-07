@@ -198,6 +198,30 @@ describe('using web streams', function () {
     assert.strictEqual(stream.locked, false)
   })
 
+  it('should reject when the stream errors without a reason', async function () {
+    const stream = new ReadableStream({
+      start (controller) {
+        controller.error()
+      }
+    })
+
+    await assert.rejects(getRawBody(stream), /stream error/)
+  })
+
+  it('should error when the stream yields an invalid chunk', async function () {
+    const stream = new ReadableStream({
+      start (controller) {
+        controller.enqueue(undefined)
+        controller.close()
+      }
+    })
+
+    await assert.rejects(getRawBody(stream), TypeError)
+
+    // the lock is released, so the rest of the stream can be handled
+    assert.strictEqual(stream.locked, false)
+  })
+
   it('should release the lock when finished', async function () {
     const stream = createWebStream(['hello, world!'])
     await getRawBody(stream)

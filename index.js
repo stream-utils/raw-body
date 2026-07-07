@@ -359,7 +359,13 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
     // promise assimilation guarantees the handlers run
     // asynchronously and at most once, even for a reader
     // that misbehaves (ECMA-262 PromiseResolve)
-    Promise.resolve(reader.read()).then(onRead, done)
+    Promise.resolve(reader.read()).then(onRead, onError)
+  }
+
+  function onError (err) {
+    // a web stream may error with a falsy reason, e.g.
+    // controller.error() without arguments
+    done(err || new Error('stream error'))
   }
 
   function fail (err) {
@@ -381,11 +387,17 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
   function onRead (result) {
     if (result.done) return onEnd()
 
-    const chunk = typeof result.value === 'string'
-      ? Buffer.from(result.value)
-      : result.value
+    let chunk
 
-    received += chunk.length
+    try {
+      chunk = typeof result.value === 'string'
+        ? Buffer.from(result.value)
+        : result.value
+
+      received += chunk.length
+    } catch (err) {
+      return done(err)
+    }
 
     if (limit !== null && received > limit) {
       done(createError(413, 'request entity too large', {
