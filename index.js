@@ -144,10 +144,12 @@ function encodingSetError () {
  * @param {number} length
  * @param {number} received
  * @param {function} done
+ * @param {number} [total] exact buffered byte count, when known,
+ *   so Buffer.concat can skip re-summing the chunk lengths
  * @private
  */
 
-function finish (decoder, buffer, length, received, done) {
+function finish (decoder, buffer, length, received, done, total) {
   if (length !== null && received !== length) {
     return done(sizeMismatchError(length, received))
   }
@@ -157,7 +159,7 @@ function finish (decoder, buffer, length, received, done) {
   try {
     string = decoder
       ? buffer + (decoder.end() || '')
-      : Buffer.concat(buffer)
+      : Buffer.concat(buffer, total)
   } catch (err) {
     return done(err)
   }
@@ -496,7 +498,9 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
   }
 
   function onRead (result) {
-    if (result.done) return finish(decoder, buffer, length, received, done)
+    // received counts exact bytes on this path (string chunks
+    // are converted before counting), unlike the node path
+    if (result.done) return finish(decoder, buffer, length, received, done, received)
 
     // a stream of strings is already decoded, so decoding it
     // again with the declared encoding would corrupt the data
