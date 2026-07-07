@@ -58,6 +58,114 @@ function getDecoder (encoding, createDecoder) {
 }
 
 /**
+ * Create a 413 entity too large error. The properties differ
+ * between the early length check and the streamed limit check.
+ *
+ * @param {object} props
+ * @private
+ */
+
+function entityTooLargeError (props) {
+  props.type = 'entity.too.large'
+  return createError(413, 'request entity too large', props)
+}
+
+/**
+ * Create a 400 request aborted error.
+ *
+ * @param {number} length
+ * @param {number} received
+ * @param {Error} [cause]
+ * @private
+ */
+
+function abortedError (length, received, cause) {
+  const err = createError(400, 'request aborted', {
+    code: 'ECONNABORTED',
+    expected: length,
+    length,
+    received,
+    type: 'request.aborted'
+  })
+
+  if (cause !== undefined) {
+    err.cause = cause
+  }
+
+  return err
+}
+
+/**
+ * Create a 400 size mismatch error.
+ *
+ * @param {number} length
+ * @param {number} received
+ * @private
+ */
+
+function sizeMismatchError (length, received) {
+  return createError(400, 'request size did not match content length', {
+    expected: length,
+    length,
+    received,
+    type: 'request.size.invalid'
+  })
+}
+
+/**
+ * Create a 500 not readable error.
+ *
+ * @private
+ */
+
+function notReadableError () {
+  return createError(500, 'stream is not readable', {
+    type: 'stream.not.readable'
+  })
+}
+
+/**
+ * Create a 500 encoding set error.
+ *
+ * @private
+ */
+
+function encodingSetError () {
+  return createError(500, 'stream encoding should not be set', {
+    type: 'stream.encoding.set'
+  })
+}
+
+/**
+ * Validate the total received length and assemble the body.
+ *
+ * @param {object} decoder
+ * @param {string|Array} buffer
+ * @param {number} length
+ * @param {number} received
+ * @param {function} done
+ * @private
+ */
+
+function finish (decoder, buffer, length, received, done) {
+  if (length !== null && received !== length) {
+    return done(sizeMismatchError(length, received))
+  }
+
+  let string
+
+  try {
+    string = decoder
+      ? buffer + (decoder.end() || '')
+      : Buffer.concat(buffer)
+  } catch (err) {
+    return done(err)
+  }
+
+  done(null, string)
+}
+
+/**
  * Get the raw body of a stream (typically HTTP).
  *
  * @param {object} stream
@@ -171,26 +279,17 @@ function readStream (stream, encoding, length, limit, createDecoder, callback) {
   // note: we intentionally leave the stream paused,
   // so users should handle the stream themselves.
   if (limit !== null && length !== null && length > limit) {
-    return done(createError(413, 'request entity too large', {
-      expected: length,
-      length,
-      limit,
-      type: 'entity.too.large'
-    }))
+    return done(entityTooLargeError({ expected: length, length, limit }))
   }
 
   // assert the stream encoding is buffer.
   if (stream.readableEncoding) {
     // developer error
-    return done(createError(500, 'stream encoding should not be set', {
-      type: 'stream.encoding.set'
-    }))
+    return done(encodingSetError())
   }
 
   if (typeof stream.readable !== 'undefined' && !stream.readable) {
-    return done(createError(500, 'stream is not readable', {
-      type: 'stream.not.readable'
-    }))
+    return done(notReadableError())
   }
 
   let received = 0
@@ -248,13 +347,7 @@ function readStream (stream, encoding, length, limit, createDecoder, callback) {
   function onAborted () {
     if (complete) return
 
-    done(createError(400, 'request aborted', {
-      code: 'ECONNABORTED',
-      expected: length,
-      length,
-      received,
-      type: 'request.aborted'
-    }))
+    done(abortedError(length, received))
   }
 
   function onData (chunk) {
@@ -263,11 +356,7 @@ function readStream (stream, encoding, length, limit, createDecoder, callback) {
     received += chunk.length
 
     if (limit !== null && received > limit) {
-      done(createError(413, 'request entity too large', {
-        limit,
-        received,
-        type: 'entity.too.large'
-      }))
+      done(entityTooLargeError({ limit, received }))
     } else if (decoder) {
       // streams1 may emit string chunks
       const buf = typeof chunk === 'string' ? Buffer.from(chunk) : chunk
@@ -286,26 +375,7 @@ function readStream (stream, encoding, length, limit, createDecoder, callback) {
     if (complete) return
     if (err) return done(err)
 
-    if (length !== null && received !== length) {
-      done(createError(400, 'request size did not match content length', {
-        expected: length,
-        length,
-        received,
-        type: 'request.size.invalid'
-      }))
-    } else {
-      let string
-
-      try {
-        string = decoder
-          ? buffer + (decoder.end() || '')
-          : Buffer.concat(buffer)
-      } catch (err) {
-        return done(err)
-      }
-
-      done(null, string)
-    }
+    finish(decoder, buffer, length, received, done)
   }
 
   function cleanup () {
@@ -354,23 +424,16 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
   let reader = null
 
   // check the length and limit options.
-  // note: we release the reader lock but do not cancel the stream,
-  // so users should handle the stream themselves.
+  // note: on error the reader lock is released but the stream is
+  // not cancelled, so users should handle the stream themselves.
   if (limit !== null && length !== null && length > limit) {
-    return fail(createError(413, 'request entity too large', {
-      expected: length,
-      length,
-      limit,
-      type: 'entity.too.large'
-    }))
+    return fail(entityTooLargeError({ expected: length, length, limit }))
   }
 
   // reject streams locked to another reader, and streams
   // already read or cancelled (disturbed)
   if (stream.locked || isDisturbed(stream)) {
-    return fail(createError(500, 'stream is not readable', {
-      type: 'stream.not.readable'
-    }))
+    return fail(notReadableError())
   }
 
   let received = 0
@@ -398,19 +461,12 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
   }
 
   function onError (err) {
-    // map aborts to the same error the node path produces.
-    // Readable.toWeb error the stream with an
+    // map aborts to the same error the node path produces:
+    // undici and Readable.toWeb error the stream with an
     // AbortError; an aborted node request bridged with
     // Readable.toWeb surfaces its ECONNRESET instead
     if (err && (err.name === 'AbortError' || err.code === 'ECONNRESET')) {
-      return done(createError(400, 'request aborted', {
-        cause: err,
-        code: 'ECONNABORTED',
-        expected: length,
-        length,
-        received,
-        type: 'request.aborted'
-      }))
+      return done(abortedError(length, received, err))
     }
 
     if (err instanceof Error) {
@@ -440,14 +496,12 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
   }
 
   function onRead (result) {
-    if (result.done) return onEnd()
+    if (result.done) return finish(decoder, buffer, length, received, done)
 
     // a stream of strings is already decoded, so decoding it
     // again with the declared encoding would corrupt the data
     if (decoder && typeof result.value === 'string') {
-      return done(createError(500, 'stream encoding should not be set', {
-        type: 'stream.encoding.set'
-      }))
+      return done(encodingSetError())
     }
 
     let chunk
@@ -461,11 +515,7 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
     received += chunk.length
 
     if (limit !== null && received > limit) {
-      done(createError(413, 'request entity too large', {
-        limit,
-        received,
-        type: 'entity.too.large'
-      }))
+      done(entityTooLargeError({ limit, received }))
     } else {
       try {
         if (decoder) {
@@ -483,29 +533,6 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
       }
 
       read()
-    }
-  }
-
-  function onEnd () {
-    if (length !== null && received !== length) {
-      done(createError(400, 'request size did not match content length', {
-        expected: length,
-        length,
-        received,
-        type: 'request.size.invalid'
-      }))
-    } else {
-      let string
-
-      try {
-        string = decoder
-          ? buffer + (decoder.end() || '')
-          : Buffer.concat(buffer)
-      } catch (err) {
-        return done(err)
-      }
-
-      done(null, string)
     }
   }
 }
