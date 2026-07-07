@@ -72,7 +72,8 @@ function getRawBody (stream, options, callback) {
   // light validation
   if (stream === undefined) {
     throw new TypeError('argument stream is required')
-  } else if (typeof stream !== 'object' || stream === null || typeof stream.on !== 'function') {
+  } else if (typeof stream !== 'object' || stream === null ||
+    (typeof stream.on !== 'function' && typeof stream.getReader !== 'function')) {
     throw new TypeError('argument stream must be a stream')
   }
 
@@ -111,13 +112,18 @@ function getRawBody (stream, options, callback) {
     ? parseInt(opts.length, 10)
     : null
 
+  // select the reader for the stream type
+  const read = typeof stream.getReader === 'function'
+    ? readWebStream
+    : readStream
+
   if (done) {
     // classic callback style
-    return readStream(stream, encoding, length, limit, opts.decoder, AsyncResource.bind(done, done.name || 'bound-anonymous-fn', null))
+    return read(stream, encoding, length, limit, opts.decoder, AsyncResource.bind(done, done.name || 'bound-anonymous-fn', null))
   }
 
   return new Promise(function executor (resolve, reject) {
-    readStream(stream, encoding, length, limit, opts.decoder, function onRead (err, buf) {
+    read(stream, encoding, length, limit, opts.decoder, function onRead (err, buf) {
       if (err) return reject(err)
       resolve(buf)
     })
@@ -295,5 +301,142 @@ function readStream (stream, encoding, length, limit, createDecoder, callback) {
     stream.removeListener('end', onEnd)
     stream.removeListener('error', onEnd)
     stream.removeListener('close', cleanup)
+  }
+}
+
+/**
+ * Read the data from a web ReadableStream.
+ *
+ * @param {ReadableStream} stream
+ * @param {string} encoding
+ * @param {number} length
+ * @param {number} limit
+ * @param {function} createDecoder
+ * @param {function} callback
+ * @private
+ */
+
+function readWebStream (stream, encoding, length, limit, createDecoder, callback) {
+  let buffer
+  let complete = false
+  let reader = null
+  let sync = true
+
+  // check the length and limit options.
+  // note: we release the reader lock but do not cancel the stream,
+  // so users should handle the stream themselves.
+  if (limit !== null && length !== null && length > limit) {
+    return done(createError(413, 'request entity too large', {
+      expected: length,
+      length,
+      limit,
+      type: 'entity.too.large'
+    }))
+  }
+
+  if (stream.locked) {
+    return done(createError(500, 'stream is not readable', {
+      type: 'stream.not.readable'
+    }))
+  }
+
+  let received = 0
+  let decoder
+
+  try {
+    decoder = getDecoder(encoding, createDecoder)
+  } catch (err) {
+    return done(err)
+  }
+
+  buffer = decoder
+    ? ''
+    : []
+
+  reader = stream.getReader()
+
+  // mark sync section complete
+  sync = false
+
+  reader.read().then(onRead, onError)
+
+  function done () {
+    const args = new Array(arguments.length)
+
+    // copy arguments
+    for (let i = 0; i < args.length; i++) {
+      args[i] = arguments[i]
+    }
+
+    // mark complete
+    complete = true
+
+    if (sync) {
+      process.nextTick(invokeCallback)
+    } else {
+      invokeCallback()
+    }
+
+    function invokeCallback () {
+      buffer = null
+
+      if (reader) {
+        // release the stream, so users can handle the rest themselves
+        reader.releaseLock()
+      }
+
+      callback.apply(null, args)
+    }
+  }
+
+  function onRead (result) {
+    if (complete) return
+    if (result.done) return onEnd()
+
+    const chunk = typeof result.value === 'string'
+      ? Buffer.from(result.value)
+      : result.value
+
+    received += chunk.length
+
+    if (limit !== null && received > limit) {
+      done(createError(413, 'request entity too large', {
+        limit,
+        received,
+        type: 'entity.too.large'
+      }))
+    } else {
+      if (decoder) {
+        buffer += decoder.write(Buffer.isBuffer(chunk)
+          ? chunk
+          : Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength))
+      } else {
+        buffer.push(chunk)
+      }
+
+      reader.read().then(onRead, onError)
+    }
+  }
+
+  function onEnd () {
+    if (length !== null && received !== length) {
+      done(createError(400, 'request size did not match content length', {
+        expected: length,
+        length,
+        received,
+        type: 'request.size.invalid'
+      }))
+    } else {
+      const string = decoder
+        ? buffer + (decoder.end() || '')
+        : Buffer.concat(buffer)
+      done(null, string)
+    }
+  }
+
+  function onError (err) {
+    if (complete) return
+
+    done(err)
   }
 }

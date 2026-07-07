@@ -25,6 +25,13 @@
   "engines": {
     "node": ">=18"  
   },
+  "nyc": {
+    "check-coverage": true,
+    "statements": 100,
+    "branches": 100,
+    "functions": 100,
+    "lines": 100
+  },
   "files": [
     "LICENSE",
     "README.md",

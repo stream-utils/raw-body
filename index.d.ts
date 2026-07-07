@@ -1,6 +1,8 @@
 declare namespace getRawBody {
   export type Encoding = string | true;
 
+  export type RawBodyStream = NodeJS.ReadableStream | ReadableStream<Uint8Array | string>;
+
   export interface Options {
     /**
      * The expected length of the stream.
@@ -68,29 +70,29 @@ declare namespace getRawBody {
  * limit. Ideal for parsing request bodies.
  */
 declare function getRawBody(
-  stream: NodeJS.ReadableStream,
+  stream: getRawBody.RawBodyStream,
   callback: (err: getRawBody.RawBodyError, body: Buffer) => void
 ): void;
 
 declare function getRawBody(
-  stream: NodeJS.ReadableStream,
+  stream: getRawBody.RawBodyStream,
   options: (getRawBody.Options & { encoding: getRawBody.Encoding }) | getRawBody.Encoding,
   callback: (err: getRawBody.RawBodyError, body: string) => void
 ): void;
 
 declare function getRawBody(
-  stream: NodeJS.ReadableStream,
+  stream: getRawBody.RawBodyStream,
   options: getRawBody.Options,
   callback: (err: getRawBody.RawBodyError, body: Buffer) => void
 ): void;
 
 declare function getRawBody(
-  stream: NodeJS.ReadableStream,
+  stream: getRawBody.RawBodyStream,
   options: (getRawBody.Options & { encoding: getRawBody.Encoding }) | getRawBody.Encoding
 ): Promise<string>;
 
 declare function getRawBody(
-  stream: NodeJS.ReadableStream,
+  stream: getRawBody.RawBodyStream,
   options?: getRawBody.Options
 ): Promise<Buffer>;
 

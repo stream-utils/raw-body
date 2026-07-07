@@ -41,6 +41,10 @@ var getRawBody = require('raw-body')
 
 **Returns a promise if no callback specified.**
 
+The `stream` argument can be a Node.js readable stream (like an HTTP request)
+or a [WHATWG `ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream)
+(like the body of a `fetch` `Response`).
+
 Options:
 
 - `length` - The length of the stream.
@@ -86,6 +90,10 @@ For HTTP requests, you may need to finish consuming the stream if
 you want to keep the socket open for future requests. For streams
 that use file descriptors, you should `stream.destroy()` or
 `stream.close()` to prevent leaks.
+
+For web streams, the reader lock is released both on success and on
+error, but the stream is never canceled, so on error you are
+responsible for disposing it, for example with `stream.cancel()`.
 
 ## Errors
 
@@ -133,7 +141,8 @@ emit `Buffer` objects.
 
 #### stream.not.readable
 
-This error will occur when the given stream is not readable.
+This error will occur when the given stream is not readable, or, for a web
+stream, when it is already locked to another reader.
 
 ## Examples
 

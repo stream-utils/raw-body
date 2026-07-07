@@ -176,10 +176,10 @@ describe('Raw Body', function () {
   })
 
   it('should handle length as string number', function (done) {
-    var testData = 'test'
-    var expectedLength = testData.length
+    const testData = 'test'
+    const expectedLength = testData.length
 
-    var stream = new Readable()
+    const stream = new Readable()
     stream.push(testData)
     stream.push(null)
 
@@ -234,6 +234,33 @@ describe('Raw Body', function () {
       assert.strictEqual(err.type, 'encoding.unsupported')
       done()
     })
+  })
+
+  it('should halt the stream on error, even without pause', function (done) {
+    const stream = new EventEmitter()
+    stream.unpipe = function () {}
+
+    // keep the listeners attached, so late events reach the handlers
+    stream.removeListener = function () { return this }
+
+    let calls = 0
+
+    getRawBody(stream, { limit: 2 }, function (err) {
+      calls++
+      assert.strictEqual(calls, 1)
+      assert.strictEqual(err.status, 413)
+      assert.strictEqual(err.type, 'entity.too.large')
+
+      // late events after completion are ignored
+      stream.emit('data', Buffer.from('more'))
+      stream.emit('aborted')
+      stream.emit('end')
+      stream.emit('error', new Error('boom'))
+
+      done()
+    })
+
+    stream.emit('data', Buffer.from('hello'))
   })
 
   describe('as a promise', function () {
