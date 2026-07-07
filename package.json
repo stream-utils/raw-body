@@ -11,8 +11,7 @@
   "repository": "stream-utils/raw-body",
   "dependencies": {
     "bytes": "^3.1.2",
-    "http-errors": "^2.0.1",
-    "iconv-lite": "^0.7.0"
+    "http-errors": "^2.0.1"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "^5.1.0",
