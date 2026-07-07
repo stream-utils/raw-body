@@ -113,10 +113,12 @@ function getRawBody (stream, options, callback) {
     ? parseInt(opts.length, 10)
     : null
 
-  // select the reader for the stream type
-  const read = typeof stream.getReader === 'function'
-    ? readWebStream
-    : readStream
+  // select the reader for the stream type.
+  // node streams take precedence, so objects exposing both
+  // interfaces keep the historical duck-typed behavior
+  const read = typeof stream.on === 'function'
+    ? readStream
+    : readWebStream
 
   if (done) {
     // classic callback style

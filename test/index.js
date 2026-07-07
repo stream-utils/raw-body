@@ -236,6 +236,22 @@ describe('Raw Body', function () {
     })
   })
 
+  it('should prefer the node stream interface when both are present', function (done) {
+    const stream = createStream(Buffer.from('hello, world!'))
+
+    // a wrapper library may decorate a node stream with a
+    // web-stream compatibility shim; the node path must win
+    stream.getReader = function () {
+      throw new Error('getReader should not be called')
+    }
+
+    getRawBody(stream, { encoding: true }, function (err, str) {
+      assert.ifError(err)
+      assert.strictEqual(str, 'hello, world!')
+      done()
+    })
+  })
+
   it('should not invoke the callback synchronously on early errors', function (done) {
     let returned = false
 
