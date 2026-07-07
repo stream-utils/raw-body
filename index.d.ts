@@ -18,6 +18,18 @@ declare namespace getRawBody {
      * `utf-8`. You can use any encoding supported by `TextDecoder`.
      */
     encoding?: Encoding | null;
+    /**
+     * A function that receives the encoding and returns the decoder used to
+     * turn the body into a string, instead of the built-in `TextDecoder`.
+     * Compatible with `iconv-lite`'s `getDecoder`. Throwing signals the
+     * encoding is unsupported.
+     */
+    decoder?: (encoding: string) => Decoder;
+  }
+
+  export interface Decoder {
+    write(chunk: Buffer): string;
+    end(): string | undefined;
   }
 
   export interface RawBodyError extends Error {
