@@ -129,6 +129,30 @@ describe('using web streams', function () {
     reader.releaseLock()
   })
 
+  it('should error when the body was already consumed', async function () {
+    const res = new Response('hello, world!')
+    await res.text()
+
+    await assert.rejects(getRawBody(res.body), function (err) {
+      assert.strictEqual(err.status, 500)
+      assert.strictEqual(err.type, 'stream.not.readable')
+      return true
+    })
+  })
+
+  it('should error when the stream is locked by a pipe', async function () {
+    const stream = createWebStream(['hello, world!'])
+    const piped = stream.pipeThrough(new TextDecoderStream())
+
+    await assert.rejects(getRawBody(stream), function (err) {
+      assert.strictEqual(err.status, 500)
+      assert.strictEqual(err.type, 'stream.not.readable')
+      return true
+    })
+
+    await piped.cancel()
+  })
+
   it('should propagate stream errors', async function () {
     const stream = new ReadableStream({
       start (controller) {
