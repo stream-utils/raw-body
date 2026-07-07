@@ -416,6 +416,55 @@ describe('Raw Body', function () {
       })
     })
 
+    describe('with a custom decoder', function () {
+      const iconv = require('iconv-lite')
+
+      it('should validate the decoder option', function () {
+        assert.throws(function () {
+          getRawBody(createStream(), { encoding: 'utf-8', decoder: 'not a function' })
+        }, /option decoder must be a function/)
+      })
+
+      it('should decode using the custom decoder', function (done) {
+        const stream = createStream(Buffer.from('bf43f36d6f20657374e1733f', 'hex'))
+        const string = '¿Cómo estás?'
+        getRawBody(stream, {
+          encoding: 'iso-8859-1',
+          decoder: iconv.getDecoder
+        }, function (err, str) {
+          assert.ifError(err)
+          assert.strictEqual(str, string)
+          done()
+        })
+      })
+
+      it('should decode encodings unsupported by TextDecoder', function (done) {
+        const string = '¿Cómo estás?'
+        const stream = createStream(iconv.encode(string, 'utf-32le'))
+        getRawBody(stream, {
+          encoding: 'utf-32le',
+          decoder: iconv.getDecoder
+        }, function (err, str) {
+          assert.ifError(err)
+          assert.strictEqual(str, string)
+          done()
+        })
+      })
+
+      it('should reject encodings the custom decoder does not support', function (done) {
+        const stream = createStream()
+        getRawBody(stream, {
+          encoding: 'akljsdflkajsdf',
+          decoder: iconv.getDecoder
+        }, function (err) {
+          assert.ok(err)
+          assert.strictEqual(err.status, 415)
+          assert.strictEqual(err.type, 'encoding.unsupported')
+          done()
+        })
+      })
+    })
+
     it('should correctly calculate the expected length', function (done) {
       const stream = createStream(Buffer.from('{"test":"å"}'))
 

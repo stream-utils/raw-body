@@ -27,14 +27,26 @@ module.exports = getRawBody
  * Get the decoder for a given encoding.
  *
  * @param {string} encoding
+ * @param {function} [createDecoder]
  * @private
  */
 
-function getDecoder (encoding) {
+function getDecoder (encoding, createDecoder) {
   if (!encoding) return null
 
   try {
-    return new TextDecoder(encoding)
+    if (createDecoder) return createDecoder(encoding)
+
+    const decoder = new TextDecoder(encoding)
+
+    return {
+      write (chunk) {
+        return decoder.decode(chunk, { stream: true })
+      },
+      end () {
+        return decoder.decode()
+      }
+    }
   } catch (e) {
     // the encoding was not found
     throw createError(415, 'specified encoding unsupported', {
@@ -91,6 +103,11 @@ function getRawBody (stream, options, callback) {
     ? opts.encoding
     : 'utf-8'
 
+  // validate decoder is a function, if provided
+  if (opts.decoder !== undefined && typeof opts.decoder !== 'function') {
+    throw new TypeError('option decoder must be a function')
+  }
+
   // convert the limit to an integer
   const limit = bytes.parse(opts.limit)
 
@@ -101,11 +118,11 @@ function getRawBody (stream, options, callback) {
 
   if (done) {
     // classic callback style
-    return readStream(stream, encoding, length, limit, AsyncResource.bind(done, done.name || 'bound-anonymous-fn', null))
+    return readStream(stream, encoding, length, limit, opts.decoder, AsyncResource.bind(done, done.name || 'bound-anonymous-fn', null))
   }
 
   return new Promise(function executor (resolve, reject) {
-    readStream(stream, encoding, length, limit, function onRead (err, buf) {
+    readStream(stream, encoding, length, limit, opts.decoder, function onRead (err, buf) {
       if (err) return reject(err)
       resolve(buf)
     })
@@ -136,11 +153,12 @@ function halt (stream) {
  * @param {string} encoding
  * @param {number} length
  * @param {number} limit
+ * @param {function} createDecoder
  * @param {function} callback
  * @public
  */
 
-function readStream (stream, encoding, length, limit, callback) {
+function readStream (stream, encoding, length, limit, createDecoder, callback) {
   let buffer
   let complete = false
   let sync = true
@@ -175,7 +193,7 @@ function readStream (stream, encoding, length, limit, callback) {
   let decoder
 
   try {
-    decoder = getDecoder(encoding)
+    decoder = getDecoder(encoding, createDecoder)
   } catch (err) {
     return done(err)
   }
@@ -249,7 +267,7 @@ function readStream (stream, encoding, length, limit, callback) {
     } else if (decoder) {
       // streams1 may emit string chunks
       const buf = typeof chunk === 'string' ? Buffer.from(chunk) : chunk
-      buffer += decoder.decode(buf, { stream: true })
+      buffer += decoder.write(buf)
     } else {
       buffer.push(chunk)
     }
@@ -268,7 +286,7 @@ function readStream (stream, encoding, length, limit, callback) {
       }))
     } else {
       const string = decoder
-        ? buffer + decoder.decode()
+        ? buffer + (decoder.end() || '')
         : Buffer.concat(buffer)
       done(null, string)
     }
