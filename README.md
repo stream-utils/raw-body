@@ -39,7 +39,7 @@ var getRawBody = require('raw-body')
 
 ### getRawBody(stream, [options], [callback])
 
-**Returns a promise if no callback specified and global `Promise` exists.**
+**Returns a promise if no callback specified.**
 
 Options:
 
@@ -185,7 +185,7 @@ app.use(function * (next) {
 ### Using as a promise
 
 To use this library as a promise, simply omit the `callback` and a promise is
-returned, provided that a global `Promise` is defined.
+returned.
 
 ```js
 var getRawBody = require('raw-body')

@@ -93,11 +93,6 @@ function getRawBody (stream, options, callback) {
     throw new TypeError('argument callback must be a function')
   }
 
-  // require the callback without promises
-  if (!done && !global.Promise) {
-    throw new TypeError('argument callback is required')
-  }
-
   // get encoding
   const encoding = opts.encoding !== true
     ? opts.encoding

@@ -3,7 +3,6 @@ const asyncHooks = require('async_hooks')
 const fs = require('fs')
 const getRawBody = require('..')
 const path = require('path')
-const Promise = global.Promise
 const EventEmitter = require('events').EventEmitter
 const Readable = require('stream').Readable
 
@@ -237,15 +236,7 @@ describe('Raw Body', function () {
     })
   })
 
-  describe('with global Promise', function () {
-    before(function () {
-      global.Promise = Promise
-    })
-
-    after(function () {
-      global.Promise = undefined
-    })
-
+  describe('as a promise', function () {
     it('should work as a promise', function () {
       return getRawBody(createStream())
         .then(checkBuffer)
@@ -261,21 +252,7 @@ describe('Raw Body', function () {
     })
   })
 
-  describe('without global Promise', function () {
-    before(function () {
-      global.Promise = undefined
-    })
-
-    after(function () {
-      global.Promise = Promise
-    })
-
-    it('should error without callback', function () {
-      assert.throws(function () {
-        getRawBody(createStream())
-      }, /argument callback.*required/)
-    })
-
+  describe('with a callback', function () {
     it('should work with callback as second argument', function (done) {
       getRawBody(createStream(), function (err, buf) {
         assert.ifError(err)
