@@ -3,10 +3,10 @@ name: ci
 on:
   pull_request:
     branches:
-      - v4
+      - master
   push:
     branches:
-      - v4
+      - master
 
 # Cancel in progress workflows
 # in the scenario where we already had a run going for that PR/branch/tag but then triggered a new run
