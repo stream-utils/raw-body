@@ -8,6 +8,8 @@ unreleased
       encodings outside the standard (e.g. UTF-32) now throw a 415 error
     - Breaking Change: `utf-16` no longer detects a big-endian BOM and always
       decodes as little-endian; use `utf-16be` for big-endian content
+  * Add `decoder` option to plug in a custom decoder (e.g. `iconv-lite`'s
+    `getDecoder`) for encodings outside the WHATWG Encoding Standard
   * Breaking Change: Node.js 18 is the minimum supported version
 
 3.0.1 / 2025-09-03
