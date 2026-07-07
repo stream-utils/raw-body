@@ -315,6 +315,26 @@ describe('using web streams', function () {
     assert.strictEqual(stream.locked, false)
   })
 
+  it('should copy chunks whose memory the producer reuses', async function () {
+    // a producer may legally recycle one scratch buffer
+    // across enqueues; retained views would all end up
+    // pointing at the last chunk's bytes
+    const scratch = new Uint8Array(4)
+    const parts = ['aaaa', 'bbbb', 'cccc']
+    let reads = 0
+
+    const stream = new ReadableStream({
+      pull (controller) {
+        if (reads === parts.length) return controller.close()
+        scratch.set(new TextEncoder().encode(parts[reads++]))
+        controller.enqueue(scratch)
+      }
+    })
+
+    const buf = await getRawBody(stream)
+    assert.strictEqual(buf.toString(), 'aaaabbbbcccc')
+  })
+
   it('should release the lock when finished', async function () {
     const stream = createWebStream(['hello, world!'])
     await getRawBody(stream)

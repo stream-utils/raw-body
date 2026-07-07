@@ -460,9 +460,14 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
     } else {
       try {
         if (decoder) {
+          // the decoder consumes the chunk immediately,
+          // so the zero-copy view is safe here
           buffer += decoder.write(chunk)
         } else {
-          buffer.push(chunk)
+          // copy: the producer may legally reuse the chunk's
+          // memory after enqueuing it, and this view is kept
+          // until the stream ends
+          buffer.push(Buffer.from(chunk))
         }
       } catch (err) {
         return done(err)
