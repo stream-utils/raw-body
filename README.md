@@ -66,7 +66,10 @@ Options:
   The returned decoder must implement `write(chunk)` and `end()`, both
   returning a string, which is the interface of
   [iconv-lite](https://www.npmjs.org/package/iconv-lite#readme)'s `getDecoder`,
-  so it can be passed directly to decode encodings outside the WHATWG standard:
+  so it can be passed directly to decode encodings outside the WHATWG standard.
+  The chunk is only valid during the `write(chunk)` call: a decoder that
+  keeps pending bytes across calls must copy them, as `TextDecoder` and
+  iconv-lite do — the underlying memory may be reused afterwards:
 
 <!-- eslint-disable no-undef -->
 
