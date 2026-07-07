@@ -10,6 +10,7 @@ unreleased
       decodes as little-endian; use `utf-16be` for big-endian content
   * Add `decoder` option to plug in a custom decoder (e.g. `iconv-lite`'s
     `getDecoder`) for encodings outside the WHATWG Encoding Standard
+  * Remove the check for a global `Promise` when no callback is provided
   * Breaking Change: Node.js 18 is the minimum supported version
 
 3.0.2 / 2025-11-21
