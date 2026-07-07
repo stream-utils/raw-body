@@ -327,6 +327,23 @@ describe('using web streams', function () {
     assert.strictEqual(stream.locked, false)
   })
 
+  it('should normalize non-Error stream failures', async function () {
+    // e.g. controller.error('timeout') or abort(reason) with a
+    // string: callers must always receive an Error instance
+    const stream = new ReadableStream({
+      start (controller) {
+        controller.error('timeout')
+      }
+    })
+
+    await assert.rejects(getRawBody(stream), function (err) {
+      assert.ok(err instanceof Error)
+      assert.strictEqual(err.message, 'stream error')
+      assert.strictEqual(err.cause, 'timeout')
+      return true
+    })
+  })
+
   it('should reject when the stream errors without a reason', async function () {
     const stream = new ReadableStream({
       start (controller) {

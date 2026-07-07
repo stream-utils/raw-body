@@ -413,9 +413,14 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
       }))
     }
 
-    // a web stream may error with a falsy reason, e.g.
-    // controller.error() without arguments
-    done(err || new Error('stream error'))
+    if (err instanceof Error) {
+      return done(err)
+    }
+
+    // a web stream may error with any value — a string reason,
+    // an object, or nothing at all (controller.error() without
+    // arguments): normalize, so callers always get an Error
+    done(new Error('stream error', { cause: err }))
   }
 
   function fail (err) {
