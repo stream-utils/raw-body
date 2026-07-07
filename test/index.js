@@ -285,6 +285,20 @@ describe('Raw Body', function () {
     done()
   })
 
+  it('should error on streams1 string chunks without an encoding', function (done) {
+    const stream = new EventEmitter()
+    stream.unpipe = function () {}
+
+    getRawBody(stream, function (err) {
+      assert.ok(err)
+      assert.strictEqual(err.code, 'ERR_INVALID_ARG_TYPE')
+      done()
+    })
+
+    stream.emit('data', 'hello')
+    stream.emit('end')
+  })
+
   it('should halt the stream on error, even without pause', function (done) {
     const stream = new EventEmitter()
     stream.unpipe = function () {}
@@ -476,6 +490,38 @@ describe('Raw Body', function () {
         assert.throws(function () {
           getRawBody(createStream(), { encoding: 'utf-8', decoder: 'not a function' })
         }, /option decoder must be a function/)
+      })
+
+      it('should error when the decoder throws while writing', function (done) {
+        getRawBody(createStream(), {
+          encoding: 'utf-8',
+          decoder: function () {
+            return {
+              write () { throw new Error('decoder write failed') },
+              end () { return '' }
+            }
+          }
+        }, function (err) {
+          assert.ok(err)
+          assert.strictEqual(err.message, 'decoder write failed')
+          done()
+        })
+      })
+
+      it('should error when the decoder throws at the end', function (done) {
+        getRawBody(createStream(), {
+          encoding: 'utf-8',
+          decoder: function () {
+            return {
+              write (chunk) { return '' },
+              end () { throw new Error('decoder end failed') }
+            }
+          }
+        }, function (err) {
+          assert.ok(err)
+          assert.strictEqual(err.message, 'decoder end failed')
+          done()
+        })
       })
 
       it('should decode using the custom decoder', function (done) {

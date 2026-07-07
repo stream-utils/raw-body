@@ -137,7 +137,11 @@ emitted more bytes.
 
 This error will occur when the given stream has an encoding set on it, making it
 a decoded stream. The stream should not have an encoding set and is expected to
-emit `Buffer` objects.
+emit `Buffer` objects. For web streams, this occurs when the stream yields
+string chunks while the `encoding` or `decoder` option is used — the stream is
+already decoded, so decoding it again would corrupt the data. (Without those
+options, string chunks are accepted and encoded as UTF-8 into the returned
+`Buffer`.)
 
 #### stream.not.readable
 

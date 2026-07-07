@@ -271,7 +271,12 @@ function readStream (stream, encoding, length, limit, createDecoder, callback) {
     } else if (decoder) {
       // streams1 may emit string chunks
       const buf = typeof chunk === 'string' ? Buffer.from(chunk) : chunk
-      buffer += decoder.write(buf)
+
+      try {
+        buffer += decoder.write(buf)
+      } catch (err) {
+        done(err)
+      }
     } else {
       buffer.push(chunk)
     }
@@ -289,9 +294,16 @@ function readStream (stream, encoding, length, limit, createDecoder, callback) {
         type: 'request.size.invalid'
       }))
     } else {
-      const string = decoder
-        ? buffer + (decoder.end() || '')
-        : Buffer.concat(buffer)
+      let string
+
+      try {
+        string = decoder
+          ? buffer + (decoder.end() || '')
+          : Buffer.concat(buffer)
+      } catch (err) {
+        return done(err)
+      }
+
       done(null, string)
     }
   }
@@ -420,6 +432,14 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
 
   function onRead (result) {
     if (result.done) return onEnd()
+
+    // a stream of strings is already decoded, so decoding it
+    // again with the declared encoding would corrupt the data
+    if (decoder && typeof result.value === 'string') {
+      return done(createError(500, 'stream encoding should not be set', {
+        type: 'stream.encoding.set'
+      }))
+    }
 
     let chunk
 

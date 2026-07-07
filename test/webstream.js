@@ -43,6 +43,20 @@ describe('using web streams', function () {
     assert.strictEqual(buf.toString(), 'hello, world!')
   })
 
+  it('should error on string chunks when encoding is set', async function () {
+    // an already-decoded stream, e.g. piped through TextDecoderStream;
+    // re-decoding it with the declared encoding would corrupt the data
+    const stream = createWebStream(['hello, world!'], { binary: false })
+
+    await assert.rejects(getRawBody(stream, { encoding: 'utf-16le' }), function (err) {
+      assert.strictEqual(err.status, 500)
+      assert.strictEqual(err.type, 'stream.encoding.set')
+      return true
+    })
+
+    assert.strictEqual(stream.locked, false)
+  })
+
   it('should work with a custom decoder', async function () {
     const iconv = require('iconv-lite')
     const str = await getRawBody(createWebStream([Buffer.from('636f6f6c20f09f9880', 'hex')]), {
