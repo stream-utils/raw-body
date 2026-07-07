@@ -384,11 +384,10 @@ describe('Raw Body', function () {
       })
     })
 
-    it('should decode UTF-16 string (BE BOM)', function (done) {
-      // BOM makes this BE
+    it('should decode UTF-16BE string (BE BOM)', function (done) {
       const stream = createStream(Buffer.from('feff00bf004300f3006d006f002000650073007400e10073003f', 'hex'))
       const string = '¿Cómo estás?'
-      getRawBody(stream, 'utf-16', function (err, str) {
+      getRawBody(stream, 'utf-16be', function (err, str) {
         assert.ifError(err)
         assert.strictEqual(str, string)
         done()
@@ -406,24 +405,13 @@ describe('Raw Body', function () {
       })
     })
 
-    it('should decode UTF-32 string (LE BOM)', function (done) {
-      // BOM makes this LE
+    it('should reject UTF-32 as unsupported', function (done) {
+      // UTF-32 is not part of the WHATWG Encoding Standard
       const stream = createStream(Buffer.from('fffe0000bf00000043000000f30000006d0000006f00000020000000650000007300000074000000e1000000730000003f000000', 'hex'))
-      const string = '¿Cómo estás?'
-      getRawBody(stream, 'utf-32', function (err, str) {
-        assert.ifError(err)
-        assert.strictEqual(str, string)
-        done()
-      })
-    })
-
-    it('should decode UTF-32 string (BE BOM)', function (done) {
-      // BOM makes this BE
-      const stream = createStream(Buffer.from('0000feff000000bf00000043000000f30000006d0000006f00000020000000650000007300000074000000e1000000730000003f', 'hex'))
-      const string = '¿Cómo estás?'
-      getRawBody(stream, 'utf-32', function (err, str) {
-        assert.ifError(err)
-        assert.strictEqual(str, string)
+      getRawBody(stream, 'utf-32', function (err) {
+        assert.ok(err)
+        assert.strictEqual(err.status, 415)
+        assert.strictEqual(err.type, 'encoding.unsupported')
         done()
       })
     })

@@ -55,7 +55,8 @@ Options:
 - `encoding` - The encoding to use to decode the body into a string.
   By default, a `Buffer` instance will be returned when no encoding is specified.
   Most likely, you want `utf-8`, so setting `encoding` to `true` will decode as `utf-8`.
-  You can use any type of encoding supported by [iconv-lite](https://www.npmjs.org/package/iconv-lite#readme).
+  You can use any encoding supported by [`TextDecoder`](https://developer.mozilla.org/en-US/docs/Web/API/Encodings),
+  as defined by the [WHATWG Encoding Standard](https://encoding.spec.whatwg.org/#names-and-labels).
 
 You can also pass a string in place of options to just specify the encoding.
 
@@ -87,8 +88,7 @@ determination of the type of error returned.
 #### encoding.unsupported
 
 This error will occur when the `encoding` option is specified, but the value does
-not map to an encoding supported by the [iconv-lite](https://www.npmjs.org/package/iconv-lite#readme)
-module.
+not map to an encoding supported by [`TextDecoder`](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder).
 
 #### entity.too.large
 

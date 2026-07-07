@@ -15,7 +15,6 @@
 const { AsyncResource } = require('async_hooks')
 const bytes = require('bytes')
 const createError = require('http-errors')
-const iconv = require('iconv-lite')
 
 /**
  * Module exports.
@@ -23,13 +22,6 @@ const iconv = require('iconv-lite')
  */
 
 module.exports = getRawBody
-
-/**
- * Module variables.
- * @private
- */
-
-const ICONV_ENCODING_MESSAGE_REGEXP = /^Encoding not recognized: /
 
 /**
  * Get the decoder for a given encoding.
@@ -42,11 +34,8 @@ function getDecoder (encoding) {
   if (!encoding) return null
 
   try {
-    return iconv.getDecoder(encoding)
+    return new TextDecoder(encoding)
   } catch (e) {
-    // error getting decoder
-    if (!ICONV_ENCODING_MESSAGE_REGEXP.test(e.message)) throw e
-
     // the encoding was not found
     throw createError(415, 'specified encoding unsupported', {
       encoding,
@@ -263,7 +252,9 @@ function readStream (stream, encoding, length, limit, callback) {
         type: 'entity.too.large'
       }))
     } else if (decoder) {
-      buffer += decoder.write(chunk)
+      // streams1 may emit string chunks
+      const buf = typeof chunk === 'string' ? Buffer.from(chunk) : chunk
+      buffer += decoder.decode(buf, { stream: true })
     } else {
       buffer.push(chunk)
     }
@@ -282,7 +273,7 @@ function readStream (stream, encoding, length, limit, callback) {
       }))
     } else {
       const string = decoder
-        ? buffer + (decoder.end() || '')
+        ? buffer + decoder.decode()
         : Buffer.concat(buffer)
       done(null, string)
     }

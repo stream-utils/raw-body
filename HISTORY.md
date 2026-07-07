@@ -2,6 +2,12 @@ unreleased
 ==================
 
   * deps: remove `unpipe` and use native `stream.unpipe()`
+  * deps: remove `iconv-lite` and use native `TextDecoder`
+    - Breaking Change: supported encodings are now those of the
+      [WHATWG Encoding Standard](https://encoding.spec.whatwg.org/#names-and-labels);
+      encodings outside the standard (e.g. UTF-32) now throw a 415 error
+    - Breaking Change: `utf-16` no longer detects a big-endian BOM and always
+      decodes as little-endian; use `utf-16be` for big-endian content
   * Breaking Change: Node.js 18 is the minimum supported version
 
 3.0.2 / 2025-11-21
