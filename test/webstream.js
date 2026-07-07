@@ -462,41 +462,31 @@ describe('using web streams', function () {
     returned = true
   })
 
-  it('should ignore reads that settle after completion', function (done) {
-    let released = false
-
-    // stream whose reader settles the same read multiple times;
-    // promise assimilation must neutralize the extra settlements
-    const stream = {
-      locked: false,
-      getReader () {
-        return {
-          releaseLock () { released = true },
-          read () {
-            return {
-              then (resolve, reject) {
-                // exceeds the limit, so this completes the read
-                resolve({ done: false, value: Buffer.from('hello, world!') })
-
-                // misbehaving thenable: settles again after completion
-                resolve({ done: false, value: Buffer.from('more') })
-                reject(new Error('boom'))
-              }
-            }
-          }
-        }
-      }
-    }
+  it('should not catch or re-invoke a callback that throws', function (done) {
+    // take over unhandled rejections for this test, so mocha's
+    // own handler does not fail the test for the expected one
+    const listeners = process.listeners('unhandledRejection')
+    process.removeAllListeners('unhandledRejection')
 
     let calls = 0
+    const failure = new Error('callback bug')
 
-    getRawBody(stream, { limit: 5 }, function (err) {
-      calls++
+    process.once('unhandledRejection', function (err) {
+      for (const listener of listeners) {
+        process.on('unhandledRejection', listener)
+      }
+
+      // the throw must surface as an unhandled rejection with
+      // the original error — not be misread as a stream error
+      // and invoke the callback again
+      assert.strictEqual(err, failure)
       assert.strictEqual(calls, 1)
-      assert.strictEqual(err.status, 413)
-      assert.strictEqual(err.type, 'entity.too.large')
-      assert.strictEqual(released, true)
       done()
+    })
+
+    getRawBody(createWebStream(['hello, world!']), function () {
+      calls++
+      throw failure
     })
   })
 

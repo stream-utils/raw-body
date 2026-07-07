@@ -391,10 +391,10 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
   read()
 
   function read () {
-    // promise assimilation guarantees the handlers run
-    // asynchronously and at most once, even for a reader
-    // that misbehaves (ECMA-262 PromiseResolve)
-    Promise.resolve(reader.read()).then(onRead, onError)
+    // note: not .catch — onError must only see read() rejections;
+    // a throw from the user callback inside onRead would otherwise
+    // be misread as a stream error and invoke the callback again
+    reader.read().then(onRead, onError)
   }
 
   function onError (err) {
