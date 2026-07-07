@@ -66,6 +66,23 @@ describe('using web streams', function () {
     assert.strictEqual(str, 'cool 😀')
   })
 
+  it('should decode encodings unsupported by TextDecoder', async function () {
+    const iconv = require('iconv-lite')
+    const bytes = iconv.encode('¿Cómo estás?', 'utf-32le')
+
+    // split mid-character: each utf-32 code unit is 4 bytes,
+    // so the decoder must carry state across chunks
+    const str = await getRawBody(createWebStream([
+      bytes.subarray(0, 6),
+      bytes.subarray(6)
+    ]), {
+      encoding: 'utf-32le',
+      decoder: iconv.getDecoder.bind(iconv)
+    })
+
+    assert.strictEqual(str, '¿Cómo estás?')
+  })
+
   it('should work with the callback style', function (done) {
     getRawBody(createWebStream(['hello, world!']), function (err, buf) {
       assert.ifError(err)
