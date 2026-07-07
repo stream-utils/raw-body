@@ -222,6 +222,20 @@ describe('using web streams', function () {
     assert.strictEqual(stream.locked, false)
   })
 
+  it('should error when the stream yields non-byte chunks', async function () {
+    // an ArrayBuffer has no .length, which previously poisoned
+    // the limit accounting with NaN, disabling the limit
+    const stream = new ReadableStream({
+      start (controller) {
+        controller.enqueue(new ArrayBuffer(10))
+        controller.close()
+      }
+    })
+
+    await assert.rejects(getRawBody(stream, { limit: 5 }), /Uint8Array or string/)
+    assert.strictEqual(stream.locked, false)
+  })
+
   it('should release the lock when finished', async function () {
     const stream = createWebStream(['hello, world!'])
     await getRawBody(stream)

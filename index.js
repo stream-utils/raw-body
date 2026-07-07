@@ -305,6 +305,24 @@ function readStream (stream, encoding, length, limit, createDecoder, callback) {
 }
 
 /**
+ * Convert a web stream chunk to a Buffer.
+ *
+ * @param {*} chunk
+ * @private
+ */
+
+function toBuffer (chunk) {
+  if (typeof chunk === 'string') return Buffer.from(chunk)
+  if (Buffer.isBuffer(chunk)) return chunk
+
+  if (chunk instanceof Uint8Array) {
+    return Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength)
+  }
+
+  throw new TypeError('stream chunks must be Uint8Array or string')
+}
+
+/**
  * Read the data from a web ReadableStream.
  *
  * @param {ReadableStream} stream
@@ -390,14 +408,12 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
     let chunk
 
     try {
-      chunk = typeof result.value === 'string'
-        ? Buffer.from(result.value)
-        : result.value
-
-      received += chunk.length
+      chunk = toBuffer(result.value)
     } catch (err) {
       return done(err)
     }
+
+    received += chunk.length
 
     if (limit !== null && received > limit) {
       done(createError(413, 'request entity too large', {
@@ -408,9 +424,7 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
     } else {
       try {
         if (decoder) {
-          buffer += decoder.write(Buffer.isBuffer(chunk)
-            ? chunk
-            : Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength))
+          buffer += decoder.write(chunk)
         } else {
           buffer.push(chunk)
         }
