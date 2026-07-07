@@ -15,7 +15,7 @@ declare namespace getRawBody {
      * The encoding to use to decode the body into a string. By default, a
      * `Buffer` instance will be returned when no encoding is specified. Most
      * likely, you want `utf-8`, so setting encoding to `true` will decode as
-     * `utf-8`. You can use any type of encoding supported by `iconv-lite`.
+     * `utf-8`. You can use any encoding supported by `TextDecoder`.
      */
     encoding?: Encoding | null;
   }
