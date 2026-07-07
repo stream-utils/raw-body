@@ -1,5 +1,7 @@
 const assert = require('assert')
 const getRawBody = require('..')
+const http = require('http')
+const { Readable } = require('stream')
 
 describe('using web streams', function () {
   it('should read a ReadableStream into a buffer', async function () {
@@ -230,6 +232,54 @@ describe('using web streams', function () {
       assert.strictEqual(err.received, 3)
       return true
     })
+  })
+
+  it('should map aborts from Readable.toWeb request streams', function (done) {
+    const server = http.createServer(function (req, res) {
+      getRawBody(Readable.toWeb(req), {
+        length: req.headers['content-length'],
+        limit: '1kb'
+      }, function (err) {
+        res.destroy()
+        server.close()
+
+        assert.ok(err)
+        assert.strictEqual(err.status, 400)
+        assert.strictEqual(err.type, 'request.aborted')
+        assert.strictEqual(err.code, 'ECONNABORTED')
+        assert.ok(err.cause)
+        done()
+      })
+    })
+
+    server.listen(0, function () {
+      const req = http.request({
+        port: server.address().port,
+        method: 'POST',
+        headers: { 'content-length': '100' }
+      })
+
+      req.on('error', function () {}) // socket hang up
+      req.write('partial')
+
+      setTimeout(function () { req.destroy() }, 20)
+    })
+  })
+
+  it('should map destroyed Readable.toWeb streams to request.aborted', function (done) {
+    const nodeStream = new Readable({ read () {} })
+    const webStream = Readable.toWeb(nodeStream)
+
+    getRawBody(webStream, function (err) {
+      assert.ok(err)
+      assert.strictEqual(err.status, 400)
+      assert.strictEqual(err.type, 'request.aborted')
+      assert.strictEqual(err.received, 7)
+      done()
+    })
+
+    nodeStream.push(Buffer.from('partial'))
+    setTimeout(function () { nodeStream.destroy() }, 10)
   })
 
   it('should propagate stream errors', async function () {

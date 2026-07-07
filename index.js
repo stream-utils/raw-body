@@ -398,9 +398,13 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
   }
 
   function onError (err) {
-    // map aborts to the same error the node path produces
-    if (err && err.name === 'AbortError') {
+    // map aborts to the same error the node path produces.
+    // Readable.toWeb error the stream with an
+    // AbortError; an aborted node request bridged with
+    // Readable.toWeb surfaces its ECONNRESET instead
+    if (err && (err.name === 'AbortError' || err.code === 'ECONNRESET')) {
       return done(createError(400, 'request aborted', {
+        cause: err,
         code: 'ECONNABORTED',
         expected: length,
         length,
