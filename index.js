@@ -13,6 +13,7 @@
  */
 
 const { AsyncResource } = require('async_hooks')
+const { isDisturbed } = require('stream')
 const bytes = require('bytes')
 const createError = require('http-errors')
 
@@ -350,7 +351,9 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
     }))
   }
 
-  if (stream.locked) {
+  // reject streams locked to another reader, and streams
+  // already read or cancelled (disturbed)
+  if (stream.locked || isDisturbed(stream)) {
     return fail(createError(500, 'stream is not readable', {
       type: 'stream.not.readable'
     }))
@@ -381,6 +384,17 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
   }
 
   function onError (err) {
+    // map aborts to the same error the node path produces
+    if (err && err.name === 'AbortError') {
+      return done(createError(400, 'request aborted', {
+        code: 'ECONNABORTED',
+        expected: length,
+        length,
+        received,
+        type: 'request.aborted'
+      }))
+    }
+
     // a web stream may error with a falsy reason, e.g.
     // controller.error() without arguments
     done(err || new Error('stream error'))

@@ -142,7 +142,8 @@ emit `Buffer` objects.
 #### stream.not.readable
 
 This error will occur when the given stream is not readable, or, for a web
-stream, when it is already locked to another reader.
+stream, when it is already locked to another reader, already read, or
+cancelled.
 
 ## Examples
 

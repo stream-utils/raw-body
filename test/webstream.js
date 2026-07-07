@@ -153,6 +153,54 @@ describe('using web streams', function () {
     await piped.cancel()
   })
 
+  it('should error when the stream was cancelled', async function () {
+    const stream = createWebStream(['hello, world!'])
+    await stream.cancel()
+
+    await assert.rejects(getRawBody(stream), function (err) {
+      assert.strictEqual(err.status, 500)
+      assert.strictEqual(err.type, 'stream.not.readable')
+      return true
+    })
+  })
+
+  it('should error when the stream was already read', async function () {
+    const stream = createWebStream(['hello, world!'])
+    const reader = stream.getReader()
+    while (!(await reader.read()).done);
+    reader.releaseLock()
+
+    await assert.rejects(getRawBody(stream), function (err) {
+      assert.strictEqual(err.status, 500)
+      assert.strictEqual(err.type, 'stream.not.readable')
+      return true
+    })
+  })
+
+  it('should map aborts to request.aborted', async function () {
+    // deliver one chunk, then abort: erroring in start() would
+    // discard the queued chunk, so error on the second pull
+    let pulls = 0
+    const stream = new ReadableStream({
+      pull (controller) {
+        if (pulls++ === 0) {
+          controller.enqueue(new TextEncoder().encode('hel'))
+        } else {
+          controller.error(new DOMException('This operation was aborted', 'AbortError'))
+        }
+      }
+    })
+
+    await assert.rejects(getRawBody(stream, { length: 10 }), function (err) {
+      assert.strictEqual(err.status, 400)
+      assert.strictEqual(err.type, 'request.aborted')
+      assert.strictEqual(err.code, 'ECONNABORTED')
+      assert.strictEqual(err.expected, 10)
+      assert.strictEqual(err.received, 3)
+      return true
+    })
+  })
+
   it('should propagate stream errors', async function () {
     const stream = new ReadableStream({
       start (controller) {
