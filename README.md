@@ -57,6 +57,26 @@ Options:
   Most likely, you want `utf-8`, so setting `encoding` to `true` will decode as `utf-8`.
   You can use any encoding supported by [`TextDecoder`](https://developer.mozilla.org/en-US/docs/Web/API/Encodings),
   as defined by the [WHATWG Encoding Standard](https://encoding.spec.whatwg.org/#names-and-labels).
+- `decoder` - A function that receives the `encoding` and returns the decoder
+  used to turn the body into a string, instead of the built-in `TextDecoder`.
+  The returned decoder must implement `write(chunk)` and `end()`, both
+  returning a string, which is the interface of
+  [iconv-lite](https://www.npmjs.org/package/iconv-lite#readme)'s `getDecoder`,
+  so it can be passed directly to decode encodings outside the WHATWG standard:
+
+<!-- eslint-disable no-undef -->
+
+```js
+const iconv = require('iconv-lite')
+
+getRawBody(stream, {
+  encoding: 'utf-32',
+  decoder: iconv.getDecoder
+})
+```
+
+  If the function throws, a `415` error is returned to signal the encoding is
+  unsupported.
 
 You can also pass a string in place of options to just specify the encoding.
 
