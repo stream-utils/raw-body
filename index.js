@@ -157,13 +157,8 @@ function readStream (stream, encoding, length, limit, callback) {
     }))
   }
 
-  // streams1: assert request encoding is buffer.
-  // streams2+: assert the stream encoding is buffer.
-  //   stream._decoder: streams1
-  //   state.encoding: streams2
-  //   state.decoder: streams2, specifically < 0.10.6
-  const state = stream._readableState
-  if (stream._decoder || (state && (state.encoding || state.decoder))) {
+  // assert the stream encoding is buffer.
+  if (stream.readableEncoding) {
     // developer error
     return done(createError(500, 'stream encoding should not be set', {
       type: 'stream.encoding.set'
