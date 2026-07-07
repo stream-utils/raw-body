@@ -318,15 +318,13 @@ function readStream (stream, encoding, length, limit, createDecoder, callback) {
 
 function readWebStream (stream, encoding, length, limit, createDecoder, callback) {
   let buffer
-  let complete = false
   let reader = null
-  let sync = true
 
   // check the length and limit options.
   // note: we release the reader lock but do not cancel the stream,
   // so users should handle the stream themselves.
   if (limit !== null && length !== null && length > limit) {
-    return done(createError(413, 'request entity too large', {
+    return fail(createError(413, 'request entity too large', {
       expected: length,
       length,
       limit,
@@ -335,7 +333,7 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
   }
 
   if (stream.locked) {
-    return done(createError(500, 'stream is not readable', {
+    return fail(createError(500, 'stream is not readable', {
       type: 'stream.not.readable'
     }))
   }
@@ -346,7 +344,7 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
   try {
     decoder = getDecoder(encoding, createDecoder)
   } catch (err) {
-    return done(err)
+    return fail(err)
   }
 
   buffer = decoder
@@ -355,42 +353,32 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
 
   reader = stream.getReader()
 
-  // mark sync section complete
-  sync = false
+  read()
 
-  reader.read().then(onRead, onError)
+  function read () {
+    // promise assimilation guarantees the handlers run
+    // asynchronously and at most once, even for a reader
+    // that misbehaves (ECMA-262 PromiseResolve)
+    Promise.resolve(reader.read()).then(onRead, done)
+  }
 
-  function done () {
-    const args = new Array(arguments.length)
+  function fail (err) {
+    // defer, so the callback is never invoked synchronously
+    process.nextTick(done, err)
+  }
 
-    // copy arguments
-    for (let i = 0; i < args.length; i++) {
-      args[i] = arguments[i]
+  function done (err, string) {
+    buffer = null
+
+    if (reader) {
+      // release the stream, so users can handle the rest themselves
+      reader.releaseLock()
     }
 
-    // mark complete
-    complete = true
-
-    if (sync) {
-      process.nextTick(invokeCallback)
-    } else {
-      invokeCallback()
-    }
-
-    function invokeCallback () {
-      buffer = null
-
-      if (reader) {
-        // release the stream, so users can handle the rest themselves
-        reader.releaseLock()
-      }
-
-      callback.apply(null, args)
-    }
+    callback(err, string)
   }
 
   function onRead (result) {
-    if (complete) return
     if (result.done) return onEnd()
 
     const chunk = typeof result.value === 'string'
@@ -406,15 +394,19 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
         type: 'entity.too.large'
       }))
     } else {
-      if (decoder) {
-        buffer += decoder.write(Buffer.isBuffer(chunk)
-          ? chunk
-          : Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength))
-      } else {
-        buffer.push(chunk)
+      try {
+        if (decoder) {
+          buffer += decoder.write(Buffer.isBuffer(chunk)
+            ? chunk
+            : Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength))
+        } else {
+          buffer.push(chunk)
+        }
+      } catch (err) {
+        return done(err)
       }
 
-      reader.read().then(onRead, onError)
+      read()
     }
   }
 
@@ -427,16 +419,17 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
         type: 'request.size.invalid'
       }))
     } else {
-      const string = decoder
-        ? buffer + (decoder.end() || '')
-        : Buffer.concat(buffer)
+      let string
+
+      try {
+        string = decoder
+          ? buffer + (decoder.end() || '')
+          : Buffer.concat(buffer)
+      } catch (err) {
+        return done(err)
+      }
+
       done(null, string)
     }
-  }
-
-  function onError (err) {
-    if (complete) return
-
-    done(err)
   }
 }

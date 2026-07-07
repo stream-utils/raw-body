@@ -236,6 +236,39 @@ describe('Raw Body', function () {
     })
   })
 
+  it('should not invoke the callback synchronously on early errors', function (done) {
+    let returned = false
+
+    getRawBody(createStream(), {
+      length,
+      limit: length - 1
+    }, function (err) {
+      assert.strictEqual(returned, true)
+      assert.strictEqual(err.type, 'entity.too.large')
+      done()
+    })
+
+    returned = true
+  })
+
+  it('should not defer the callback once reading is asynchronous', function (done) {
+    const stream = new EventEmitter()
+    let callbackRan = false
+
+    getRawBody(stream, { length: 0, encoding: true }, function (err, str) {
+      callbackRan = true
+      assert.ifError(err)
+      assert.strictEqual(str, '')
+    })
+
+    stream.emit('end')
+
+    // the stream already ended, so the callback must not
+    // be deferred to a later tick
+    assert.strictEqual(callbackRan, true)
+    done()
+  })
+
   it('should halt the stream on error, even without pause', function (done) {
     const stream = new EventEmitter()
     stream.unpipe = function () {}

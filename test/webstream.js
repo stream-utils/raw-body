@@ -164,6 +164,40 @@ describe('using web streams', function () {
     await assert.rejects(getRawBody(stream), /boom/)
   })
 
+  it('should error when the decoder throws while writing', async function () {
+    const stream = createWebStream(['hello, world!'])
+
+    await assert.rejects(getRawBody(stream, {
+      encoding: 'utf-8',
+      decoder: function () {
+        return {
+          write () { throw new Error('decoder write failed') },
+          end () { return '' }
+        }
+      }
+    }), /decoder write failed/)
+
+    // the lock is released, so the rest of the stream can be handled
+    assert.strictEqual(stream.locked, false)
+    await stream.cancel()
+  })
+
+  it('should error when the decoder throws at the end', async function () {
+    const stream = createWebStream(['hello, world!'])
+
+    await assert.rejects(getRawBody(stream, {
+      encoding: 'utf-8',
+      decoder: function () {
+        return {
+          write (chunk) { return '' },
+          end () { throw new Error('decoder end failed') }
+        }
+      }
+    }), /decoder end failed/)
+
+    assert.strictEqual(stream.locked, false)
+  })
+
   it('should release the lock when finished', async function () {
     const stream = createWebStream(['hello, world!'])
     await getRawBody(stream)
@@ -209,10 +243,26 @@ describe('using web streams', function () {
     assert.strictEqual(str, 'hello, world!')
   })
 
+  it('should not invoke the callback synchronously on early errors', function (done) {
+    let returned = false
+
+    getRawBody(createWebStream(['hello, world!']), {
+      length: 13,
+      limit: 5
+    }, function (err) {
+      assert.strictEqual(returned, true)
+      assert.strictEqual(err.type, 'entity.too.large')
+      done()
+    })
+
+    returned = true
+  })
+
   it('should ignore reads that settle after completion', function (done) {
     let released = false
 
-    // stream whose reader settles the same read multiple times
+    // stream whose reader settles the same read multiple times;
+    // promise assimilation must neutralize the extra settlements
     const stream = {
       locked: false,
       getReader () {
