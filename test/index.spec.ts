@@ -97,6 +97,18 @@ describe('Raw Body', function () {
     })
   }))
 
+  it('should throw on a limit that does not parse', function () {
+    assert.throws(function () {
+      getRawBody(createStream(), { limit: 'banana' }, function () {})
+    }, /option limit must be a number of bytes or a byte size string/)
+  })
+
+  it('should throw on a NaN limit', function () {
+    assert.throws(function () {
+      getRawBody(createStream(), { limit: NaN }, function () {})
+    }, /option limit must be a number of bytes or a byte size string/)
+  })
+
   it('should work with limit and length', withDone(function (done) {
     getRawBody(createStream(), {
       length,
