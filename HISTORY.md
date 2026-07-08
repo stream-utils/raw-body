@@ -8,7 +8,7 @@
 
 - Migrate to TypeScript and publish as ESM-only - by [@bjohansebas](https://github.com/bjohansebas) in [#157](https://github.com/stream-utils/raw-body/pull/157)
 
-    CommonJS consumers can keep loading the package through `require(esm)`, available in all supported Node.js versions
+    CommonJS consumers can keep loading the package through `require(esm)`.
 
 - Use native `TextDecoder` instead of `iconv-lite` - by [@bjohansebas](https://github.com/bjohansebas) in [#143](https://github.com/stream-utils/raw-body/pull/143)
 
