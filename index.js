@@ -409,8 +409,8 @@ function readStream (stream, encoding, length, limit, createDecoder, signal, cal
   }
 
   function onSignalAbort () {
-    // the listener is removed on completion, so this only
-    // fires while the read is still in progress
+    if (complete) return
+
     done(requestTimeoutError(length, received, signal.reason))
   }
 

@@ -271,6 +271,29 @@ describe('Raw Body', function () {
     })
   })
 
+  it('should ignore a signal that aborts after the body is read', function (done) {
+    const controller = new AbortController()
+    const stream = new Readable({ read () {} })
+    stream.push('hello, world!')
+    stream.push(null)
+
+    let calls = 0
+
+    getRawBody(stream, { signal: controller.signal }, function (err, buf) {
+      calls++
+      assert.ifError(err)
+      assert.strictEqual(buf.toString(), 'hello, world!')
+
+      // aborting after completion must not invoke the callback
+      // again or surface a late error
+      controller.abort()
+      setTimeout(function () {
+        assert.strictEqual(calls, 1)
+        done()
+      }, 10)
+    })
+  })
+
   it('should error when the stream closes before ending', function (done) {
     const stream = new Readable({ read () {} })
 
