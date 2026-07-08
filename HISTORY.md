@@ -28,7 +28,22 @@ unreleased
   * Add `decoder` option to plug in a custom decoder (e.g. `iconv-lite`'s
     `getDecoder`) for encodings outside the WHATWG Encoding Standard
   * Remove the check for a global `Promise` when no callback is provided
-  * Breaking Change: Node.js 20 is the minimum supported version
+  * Fix node streams destroyed without an error never settling the
+    promise / never invoking the callback; they now error with the same
+    400 `request.aborted` as the web path
+  * Migrate to TypeScript; types are now generated from the source
+    instead of a hand-written `index.d.ts`
+    - `err` in callbacks is typed `RawBodyError | null`, and
+      `status`/`statusCode`/`type` are optional: errors passed through
+      from the stream or a custom decoder may not carry them
+    - `RawBodyError` gains the `code` property (e.g. `ECONNABORTED`)
+    - options are typed `Readonly` and may be `null`; they are read
+      once at call time and never mutated
+    - `encoding: false` is accepted to explicitly disable decoding
+  * Breaking Change: the package is now ESM-only; `require()` keeps
+    working on any supported Node.js version via `module.exports`
+    interop
+  * Breaking Change: Node.js 22 is the minimum supported version
 
 3.0.2 / 2025-11-21
 ======================

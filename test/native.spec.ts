@@ -37,6 +37,22 @@ describe('using native streams', function () {
     })
   }))
 
+  it('should map streams destroyed without error to request.aborted', withDone(function (done) {
+    const stream = new Readable({ read () {} })
+
+    getRawBody(stream, function (err) {
+      assert.ok(err)
+      assert.strictEqual(err.status, 400)
+      assert.strictEqual(err.type, 'request.aborted')
+      assert.strictEqual(err.code, 'ECONNABORTED')
+      assert.strictEqual(err.received, 7)
+      done()
+    })
+
+    stream.push(Buffer.from('partial'))
+    setTimeout(function () { stream.destroy() }, 10)
+  }))
+
   it('should throw if stream is not readable', withDone(function (done) {
     const stream = createStream(Buffer.from('hello, streams!'))
 
