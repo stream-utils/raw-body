@@ -107,7 +107,75 @@ describe('stream flowing', function () {
       }, 500)
     })
   })
+
+  describe('when a web stream exceeds the limit', function () {
+    it('should stop pulling', function (done) {
+      const stream = createInfiniteWebStream()
+
+      getRawBody(stream, {
+        limit: defaultLimit
+      }, function (err) {
+        assert.ok(err)
+        assert.strictEqual(err.type, 'entity.too.large')
+        assert.ok(err.received > defaultLimit)
+        assert.strictEqual(stream.locked, false)
+
+        assertPullsSettle(stream, done)
+      })
+    })
+
+    it('should not pull when length exceeds limit', function (done) {
+      const stream = createInfiniteWebStream()
+
+      getRawBody(stream, {
+        length: defaultLimit * 2,
+        limit: defaultLimit
+      }, function (err) {
+        assert.ok(err)
+        assert.strictEqual(err.type, 'entity.too.large')
+        assert.strictEqual(stream.locked, false)
+
+        // never read: only the stream's own queue priming runs
+        assert.ok(stream.pulls <= 1)
+        assertPullsSettle(stream, done)
+      })
+    })
+  })
 })
+
+/**
+ * The web analogue of asserting a paused stream: after the
+ * queue refills to its high water mark, pulls stop growing.
+ */
+
+function assertPullsSettle (stream, done) {
+  setTimeout(function () {
+    const settled = stream.pulls
+
+    setTimeout(function () {
+      assert.strictEqual(stream.pulls, settled)
+      done()
+    }, 100)
+  }, 100)
+}
+
+function createInfiniteWebStream () {
+  let pulls = 0
+
+  const stream = new ReadableStream({
+    pull (controller) {
+      pulls++
+      controller.enqueue(new Uint8Array(64 * 1024))
+    }
+  })
+
+  // track pull count for tests
+  Object.defineProperty(stream, 'pulls', {
+    get () { return pulls }
+  })
+
+  return stream
+}
 
 function createChunk () {
   const base = Math.random().toString(32)
