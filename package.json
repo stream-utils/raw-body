@@ -23,7 +23,7 @@
     "nyc": "17.0.0"
   },
   "engines": {
-    "node": ">=18"  
+    "node": ">=18.12"  
   },
   "files": [
     "LICENSE",
