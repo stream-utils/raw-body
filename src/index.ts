@@ -311,6 +311,12 @@ function getRawBody (stream: RawBodyStream, options?: Readonly<Options> | Encodi
   // convert the limit to an integer
   const limit = opts.limit == null ? null : bytes.parse(opts.limit)
 
+  // an unparseable limit is a developer error: silently reading
+  // with no limit at all would disable the protection
+  if (opts.limit != null && limit === null) {
+    throw new TypeError('option limit must be a number of bytes or a byte size string')
+  }
+
   // convert the expected length to an integer
   const length = opts.length != null && !Number.isNaN(Number(opts.length))
     ? parseInt(String(opts.length), 10)
