@@ -150,8 +150,9 @@ chunks are accepted and encoded as UTF-8 into the returned `Buffer`.)
 #### stream.not.readable
 
 This error will occur when the given stream is not readable, or, for a web
-stream, when it is already locked to another reader, already read, or
-cancelled.
+stream, when it is locked to another reader. A web stream that was already
+read or cancelled cannot be detected portably across runtimes and reads as
+an empty body.
 
 ## Examples
 

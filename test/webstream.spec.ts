@@ -6,7 +6,7 @@ import type { ReadableWritablePair } from 'node:stream/web'
 import iconv from 'iconv-lite'
 import { describe, it } from 'vitest'
 import getRawBody, { type RawBodyError } from '../src/index.ts'
-import { hasIsDisturbed, isBun } from './support/runtime.ts'
+import { isBun } from './support/runtime.ts'
 import { withDone } from './support/with-done.ts'
 
 describe('using web streams', function () {
@@ -190,28 +190,26 @@ describe('using web streams', function () {
     await piped.cancel()
   })
 
-  it.skipIf(!hasIsDisturbed)('should error when the stream was cancelled', async function () {
+  // a disturbed stream cannot be told apart from an empty one portably,
+  // so cancelled and fully-read streams read as an empty body
+  it('should read a cancelled stream as an empty body', async function () {
     const stream = createWebStream(['hello, world!'])
     await stream.cancel()
 
-    await assert.rejects(getRawBody(stream), function (err: RawBodyError) {
-      assert.strictEqual(err.status, 500)
-      assert.strictEqual(err.type, 'stream.not.readable')
-      return true
-    })
+    const buf = await getRawBody(stream)
+    assert.ok(Buffer.isBuffer(buf))
+    assert.strictEqual(buf.length, 0)
   })
 
-  it.skipIf(!hasIsDisturbed)('should error when the stream was already read', async function () {
+  it('should read an already-read stream as an empty body', async function () {
     const stream = createWebStream(['hello, world!'])
     const reader = stream.getReader()
     while (!(await reader.read()).done);
     reader.releaseLock()
 
-    await assert.rejects(getRawBody(stream), function (err: RawBodyError) {
-      assert.strictEqual(err.status, 500)
-      assert.strictEqual(err.type, 'stream.not.readable')
-      return true
-    })
+    const buf = await getRawBody(stream)
+    assert.ok(Buffer.isBuffer(buf))
+    assert.strictEqual(buf.length, 0)
   })
 
   it('should map aborts to request.aborted', async function () {
@@ -463,6 +461,39 @@ describe('using web streams', function () {
       encoding: 'utf-8'
     })
     assert.strictEqual(str, 'hello, world!')
+  })
+
+  it('should map an aborted fetch Response body to request.aborted', async function () {
+    // a fetch response cut off by an AbortController mid-body: the fetch
+    // spec errors the body stream with the abort reason (an AbortError)
+    const server = http.createServer(function (req, res) {
+      res.writeHead(200, { 'content-length': '100' })
+      res.write('partial')
+      // never end: the client aborts first
+    })
+
+    await new Promise<void>(function (resolve) { server.listen(0, function () { resolve() }) })
+
+    try {
+      const controller = new AbortController()
+      const res = await fetch('http://localhost:' + (server.address() as net.AddressInfo).port, {
+        signal: controller.signal
+      })
+
+      setTimeout(function () { controller.abort() }, 20)
+
+      await assert.rejects(getRawBody(res.body!, { length: 100 }), function (err: RawBodyError) {
+        assert.strictEqual(err.status, 400)
+        assert.strictEqual(err.type, 'request.aborted')
+        assert.strictEqual(err.code, 'ECONNABORTED')
+        assert.strictEqual(err.expected, 100)
+        assert.strictEqual(err.received, 7)
+        assert.ok(err.cause)
+        return true
+      })
+    } finally {
+      server.close()
+    }
   })
 
   it('should read the readable side of a TransformStream', async function () {
