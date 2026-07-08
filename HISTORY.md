@@ -1,49 +1,50 @@
-unreleased
-==================
+## UNRELEASED CHANGES
 
-  * Add support for WHATWG `ReadableStream` (web streams): `fetch`
-    `Request`/`Response` bodies, `Blob.stream()`, `TransformStream`
-    readables, and `Readable.toWeb()` bridges
-    - streams already locked, read, or cancelled error with a 500
-      `stream.not.readable`
-    - client aborts are mapped to the same 400 `request.aborted` error
-      as node streams, with the original error in `cause`
-    - string chunks are accepted without an encoding (UTF-8 `Buffer`);
-      combined with an encoding they error with a 500
-      `stream.encoding.set`, since the stream is already decoded
-    - non-byte chunks (e.g. `ArrayBuffer`) error with a `TypeError`
-    - on error the reader lock is released, but the stream is not
-      cancelled; disposing it is up to the caller
-  * Fix process crash when a custom `decoder` throws while reading
-    node streams
-  * Fix process crash on legacy streams1 emitting string chunks with
-    no encoding set; this now errors through the callback
-  * deps: remove `unpipe` and use native `stream.unpipe()`
-  * deps: remove `iconv-lite` and use native `TextDecoder`
-    - Breaking Change: supported encodings are now those of the
-      [WHATWG Encoding Standard](https://encoding.spec.whatwg.org/#names-and-labels);
-      encodings outside the standard (e.g. UTF-32) now throw a 415 error
-    - Breaking Change: `utf-16` no longer detects a big-endian BOM and always
-      decodes as little-endian; use `utf-16be` for big-endian content
-  * Add `decoder` option to plug in a custom decoder (e.g. `iconv-lite`'s
-    `getDecoder`) for encodings outside the WHATWG Encoding Standard
-  * Remove the check for a global `Promise` when no callback is provided
-  * Fix node streams destroyed without an error never settling the
-    promise / never invoking the callback; they now error with the same
-    400 `request.aborted` as the web path
-  * Migrate to TypeScript; types are now generated from the source
-    instead of a hand-written `index.d.ts`
-    - `err` in callbacks is typed `RawBodyError | null`, and
-      `status`/`statusCode`/`type` are optional: errors passed through
-      from the stream or a custom decoder may not carry them
-    - `RawBodyError` gains the `code` property (e.g. `ECONNABORTED`)
-    - options are typed `Readonly` and may be `null`; they are read
-      once at call time and never mutated
-    - `encoding: false` is accepted to explicitly disable decoding
-  * Breaking Change: the package is now ESM-only; `require()` keeps
-    working on any supported Node.js version via `module.exports`
-    interop
-  * Breaking Change: Node.js 22 is the minimum supported version
+### ⚠️ Breaking changes
+
+- Remove support for Node <22 - by [@bjohansebas](https://github.com/bjohansebas) in [#156](https://github.com/stream-utils/raw-body/pull/156)
+
+    Node.js versions prior to 22 are no longer supported. This allows the package to migrate to ESM and rely on `require(esm)`, which does not work correctly on earlier versions.
+
+- Migrate to TypeScript and publish as ESM-only - by [@bjohansebas](https://github.com/bjohansebas) in [#157](https://github.com/stream-utils/raw-body/pull/157)
+
+- Use native `TextDecoder` instead of `iconv-lite` - by [@bjohansebas](https://github.com/bjohansebas) in [#143](https://github.com/stream-utils/raw-body/pull/143)
+
+    Supported encodings are now those of the [WHATWG Encoding Standard](https://encoding.spec.whatwg.org/#names-and-labels); encodings outside the standard (e.g. UTF-32) now throw a 415 error. `utf-16` no longer detects a big-endian BOM and always decodes as little-endian; use `utf-16be` for big-endian content.
+
+- Remove streams1 support - by [@bjohansebas](https://github.com/bjohansebas) in [#144](https://github.com/stream-utils/raw-body/pull/144) and [#161](https://github.com/stream-utils/raw-body/pull/161)
+
+    Node streams that emit string chunks now error with a 500 `stream.encoding.set` through the callback (previously they were decoded silently, or crashed the process when no encoding was set), matching the web stream path. Streams are expected to implement the readable stream interface (`unpipe`, `pause`).
+
+- Validate the `limit` option - by [@bjohansebas](https://github.com/bjohansebas) in [#162](https://github.com/stream-utils/raw-body/pull/162)
+
+    A `limit` that does not parse to a byte count (e.g. `'banana'`, `NaN`) now throws a `TypeError` instead of silently reading with no limit at all. `limit: null` remains the explicit way to disable the limit.
+
+### 🚀 Improvements
+
+- Support reading WHATWG `ReadableStream` (web streams) - by [@bjohansebas](https://github.com/bjohansebas) in [#148](https://github.com/stream-utils/raw-body/pull/148) and [#160](https://github.com/stream-utils/raw-body/pull/160)
+
+    `fetch` `Request`/`Response` bodies, `Blob.stream()`, `TransformStream` readables, and `Readable.toWeb()` bridges can be read directly. Streams already locked, read, or cancelled error with a 500 `stream.not.readable`; client aborts are mapped to the same 400 `request.aborted` error as node streams, with the original error in `cause`; string chunks are accepted without an encoding (UTF-8 `Buffer`), but error with a 500 `stream.encoding.set` when combined with one, since the stream is already decoded; non-byte chunks (e.g. `ArrayBuffer`) error with a `TypeError`. On error the reader lock is released, but the stream is not cancelled; disposing it is up to the caller.
+
+- Add a custom `decoder` option - by [@bjohansebas](https://github.com/bjohansebas) in [#145](https://github.com/stream-utils/raw-body/pull/145)
+
+    A function compatible with `iconv-lite`'s `getDecoder` can be plugged in to decode encodings outside the WHATWG Encoding Standard.
+
+- Use native `stream.unpipe()` and remove the `unpipe` dependency - by [@Phillip9587](https://github.com/Phillip9587) in [#93](https://github.com/stream-utils/raw-body/pull/93)
+
+- Remove the check for a global `Promise` when no callback is provided - by [@bjohansebas](https://github.com/bjohansebas) in [#146](https://github.com/stream-utils/raw-body/pull/146)
+
+- Add a benchmark suite - by [@bjohansebas](https://github.com/bjohansebas) in [#163](https://github.com/stream-utils/raw-body/pull/163)
+
+    `npm run bench` compares the node and web stream paths with realistic request bodies.
+
+### 🐞 Bug fixes
+
+- Fix node streams destroyed without an error never settling - by [@bjohansebas](https://github.com/bjohansebas) in [#158](https://github.com/stream-utils/raw-body/pull/158)
+
+    They now error through the callback / reject the promise with the same 400 `request.aborted` error as the web path, instead of never invoking the callback or settling the promise.
+
+- Fix process crash when a custom `decoder` throws while reading node streams - by [@bjohansebas](https://github.com/bjohansebas) in [#157](https://github.com/stream-utils/raw-body/pull/157)
 
 3.0.2 / 2025-11-21
 ======================
