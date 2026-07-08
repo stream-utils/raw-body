@@ -37,6 +37,7 @@
     "dist/"
   ],
   "scripts": {
+    "bench": "vitest bench --run",
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
