@@ -343,7 +343,7 @@ function getRawBody (stream: RawBodyStream, options?: Readonly<Options> | Encodi
 }
 
 export default getRawBody
-export { getRawBody, getRawBody as 'module.exports' }
+export { getRawBody }
 
 /**
  * Halt a stream.

@@ -17,24 +17,21 @@ This is a [Node.js](https://nodejs.org/en/) module available through the
 [`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
 
 ```sh
-$ npm install raw-body
-```
-
-### TypeScript
-
-This module includes a [TypeScript](https://www.typescriptlang.org/)
-declaration file to enable auto complete in compatible editors and type
-information for TypeScript projects. This module depends on the Node.js
-types, so install `@types/node`:
-
-```sh
-$ npm install @types/node
+npm install raw-body
 ```
 
 ## API
 
 ```js
-var getRawBody = require('raw-body')
+import getRawBody from 'raw-body'
+```
+
+The package is ESM-only. CommonJS consumers can load it with
+[`require(esm)`](https://nodejs.org/api/modules.html#loading-ecmascript-modules-using-require),
+available in all supported Node.js versions:
+
+```js
+const getRawBody = require('raw-body').default
 ```
 
 ### getRawBody(stream, [options], [callback])
@@ -71,10 +68,8 @@ Options:
   keeps pending bytes across calls must copy them, as `TextDecoder` and
   iconv-lite do — the underlying memory may be reused afterwards:
 
-<!-- eslint-disable no-undef -->
-
 ```js
-const iconv = require('iconv-lite')
+import iconv from 'iconv-lite'
 
 getRawBody(stream, {
   encoding: 'utf-32',
@@ -100,151 +95,15 @@ you are responsible for disposing it, for example with `stream.cancel()`.
 
 ## Errors
 
-This module creates errors depending on the error condition during reading.
-The error may be an error from the underlying Node.js implementation, but is
-otherwise an error created by this module, which has the following attributes:
-
-  * `limit` - the limit in bytes
-  * `length` and `expected` - the expected length of the stream
-  * `received` - the received bytes
-  * `encoding` - the invalid encoding
-  * `status` and `statusCode` - the corresponding status code for the error
-  * `type` - the error type
-  * `cause` - the underlying error, when the error wraps another one
-    (for example an aborted web stream)
-
-### Types
-
-The errors from this module have a `type` property which allows for the programmatic
-determination of the type of error returned.
-
-#### encoding.unsupported
-
-This error will occur when the `encoding` option is specified, but the value does
-not map to an encoding supported by [`TextDecoder`](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder).
-
-#### entity.too.large
-
-This error will occur when the `limit` option is specified, but the stream has
-an entity that is larger.
-
-#### request.aborted
-
-This error will occur when the request stream is aborted by the client before
-reading the body has finished.
-
-#### request.size.invalid
-
-This error will occur when the `length` option is specified, but the stream has
-emitted more bytes.
-
-#### stream.encoding.set
-
-This error will occur when the given stream has an encoding set on it, making it
-a decoded stream. The stream should not have an encoding set and is expected to
-emit `Buffer` objects. For web streams, this occurs when the stream yields
-string chunks while an encoding is set — the stream is already decoded, so
-decoding it again would corrupt the data. (Without an encoding, string
-chunks are accepted and encoded as UTF-8 into the returned `Buffer`.)
-
-#### stream.not.readable
-
-This error will occur when the given stream is not readable, or, for a web
-stream, when it is locked to another reader. A web stream that was already
-read or cancelled cannot be detected portably across runtimes and reads as
-an empty body.
+This module creates errors with `status`/`statusCode`, the received and
+expected sizes, and a `type` property for programmatic handling. The full
+reference of error attributes and types lives in
+[docs/errors.md](https://github.com/stream-utils/raw-body/blob/master/docs/errors.md).
 
 ## Examples
 
-### Simple Express example
-
-```js
-var contentType = require('content-type')
-var express = require('express')
-var getRawBody = require('raw-body')
-
-var app = express()
-
-app.use(function (req, res, next) {
-  getRawBody(req, {
-    length: req.headers['content-length'],
-    limit: '1mb',
-    encoding: contentType.parse(req).parameters.charset
-  }, function (err, string) {
-    if (err) return next(err)
-    req.text = string
-    next()
-  })
-})
-
-// now access req.text
-```
-
-### Simple Koa example
-
-```js
-var contentType = require('content-type')
-var getRawBody = require('raw-body')
-var koa = require('koa')
-
-var app = koa()
-
-app.use(function * (next) {
-  this.text = yield getRawBody(this.req, {
-    length: this.req.headers['content-length'],
-    limit: '1mb',
-    encoding: contentType.parse(this.req).parameters.charset
-  })
-  yield next
-})
-
-// now access this.text
-```
-
-### Using as a promise
-
-To use this library as a promise, simply omit the `callback` and a promise is
-returned.
-
-```js
-var getRawBody = require('raw-body')
-var http = require('http')
-
-var server = http.createServer(function (req, res) {
-  getRawBody(req)
-    .then(function (buf) {
-      res.statusCode = 200
-      res.end(buf.length + ' bytes submitted')
-    })
-    .catch(function (err) {
-      res.statusCode = 500
-      res.end(err.message)
-    })
-})
-
-server.listen(3000)
-```
-
-### Using with TypeScript
-
-```ts
-import * as getRawBody from 'raw-body';
-import * as http from 'http';
-
-const server = http.createServer((req, res) => {
-  getRawBody(req)
-  .then((buf) => {
-    res.statusCode = 200;
-    res.end(buf.length + ' bytes submitted');
-  })
-  .catch((err) => {
-    res.statusCode = err.statusCode;
-    res.end(err.message);
-  });
-});
-
-server.listen(3000);
-```
+Usage examples (Express, Koa, Hono, promises, and TypeScript) live in
+[docs/examples.md](https://github.com/stream-utils/raw-body/blob/master/docs/examples.md).
 
 ## License
 
