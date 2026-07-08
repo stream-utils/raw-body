@@ -513,32 +513,41 @@ describe('using web streams', function () {
     returned = true
   })
 
-  it('should not catch or re-invoke a callback that throws', function (done) {
+  it('should not catch or re-invoke a callback that throws', async function () {
     // take over unhandled rejections for this test, so mocha's
     // own handler does not fail the test for the expected one
     const listeners = process.listeners('unhandledRejection')
     process.removeAllListeners('unhandledRejection')
 
     let calls = 0
+    let timer
     const failure = new Error('callback bug')
 
-    process.once('unhandledRejection', function (err) {
-      for (const listener of listeners) {
-        process.on('unhandledRejection', listener)
-      }
+    try {
+      const caught = new Promise(function (resolve, reject) {
+        process.once('unhandledRejection', resolve)
+        timer = setTimeout(reject, 1000, new Error('expected an unhandled rejection'))
+      })
+
+      getRawBody(createWebStream(['hello, world!']), function () {
+        calls++
+        throw failure
+      })
 
       // the throw must surface as an unhandled rejection with
       // the original error — not be misread as a stream error
       // and invoke the callback again
-      assert.strictEqual(err, failure)
+      assert.strictEqual(await caught, failure)
       assert.strictEqual(calls, 1)
-      done()
-    })
+    } finally {
+      // restore mocha's handlers no matter how the test ends
+      clearTimeout(timer)
+      process.removeAllListeners('unhandledRejection')
 
-    getRawBody(createWebStream(['hello, world!']), function () {
-      calls++
-      throw failure
-    })
+      for (const listener of listeners) {
+        process.on('unhandledRejection', listener)
+      }
+    }
   })
 
   it('should release the lock on error', async function () {

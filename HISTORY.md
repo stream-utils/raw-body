@@ -9,7 +9,7 @@ unreleased
     - client aborts are mapped to the same 400 `request.aborted` error
       as node streams, with the original error in `cause`
     - string chunks are accepted without an encoding (UTF-8 `Buffer`);
-      combined with `encoding` or `decoder` they error with a 500
+      combined with an encoding they error with a 500
       `stream.encoding.set`, since the stream is already decoded
     - non-byte chunks (e.g. `ArrayBuffer`) error with a `TypeError`
     - on error the reader lock is released, but the stream is not
