@@ -18,6 +18,15 @@ const bytes = require('bytes')
 const createError = require('http-errors')
 
 /**
+ * Check if a value is an Error.
+ * @private
+ */
+
+const isError = typeof Error.isError === 'function'
+  ? Error.isError
+  : function (err) { return err instanceof Error }
+
+/**
  * Module exports.
  * @public
  */
@@ -468,7 +477,7 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
       return done(abortedError(length, received, err))
     }
 
-    if (err instanceof Error) {
+    if (isError(err)) {
       return done(err)
     }
 
