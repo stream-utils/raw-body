@@ -4,11 +4,6 @@ const http = require('http')
 const net = require('net')
 const { Readable } = require('stream')
 
-// socket.resetAndDestroy() requires node >= 18.3
-const itLiveReset = typeof net.Socket.prototype.resetAndDestroy === 'function'
-  ? it
-  : it.skip
-
 describe('using web streams', function () {
   it('should read a ReadableStream into a buffer', async function () {
     const buf = await getRawBody(createWebStream(['hello', ', ', 'world!']))
@@ -272,29 +267,40 @@ describe('using web streams', function () {
     })
   })
 
-  it('should not map non-abort connection resets to request.aborted', async function () {
-    // a raw socket reset is a transport failure, not a client
-    // abort: the node path passes it through, so must this one.
-    // this is the exact error a net.Socket read produces on a
-    // TCP RST (recreated: producing a live RST needs
-    // socket.resetAndDestroy, which requires node >= 18.3)
-    const reset = new Error('read ECONNRESET')
-    reset.code = 'ECONNRESET'
+  it('should time out a slow Readable.toWeb body via the signal', function (done) {
+    const server = http.createServer(function (req, res) {
+      getRawBody(Readable.toWeb(req), {
+        length: req.headers['content-length'],
+        signal: AbortSignal.timeout(30)
+      }, function (err) {
+        res.destroy()
+        server.close()
 
-    const stream = new ReadableStream({
-      start (controller) {
-        controller.error(reset)
-      }
+        assert.ok(err)
+        assert.strictEqual(err.status, 408)
+        assert.strictEqual(err.type, 'request.timeout')
+        assert.strictEqual(err.received, 7)
+        assert.strictEqual(err.cause.name, 'TimeoutError')
+        done()
+      })
     })
 
-    await assert.rejects(getRawBody(stream), function (err) {
-      assert.strictEqual(err, reset)
-      assert.notStrictEqual(err.type, 'request.aborted')
-      return true
+    server.listen(0, function () {
+      const req = http.request({
+        port: server.address().port,
+        method: 'POST',
+        headers: { 'content-length': '100' }
+      })
+
+      req.on('error', function () {})
+      req.write('partial')
+      // never sends the remaining bytes; the signal fires
     })
   })
 
-  itLiveReset('should pass through a live socket reset unmapped', function (done) {
+  it('should pass through a live socket reset unmapped', function (done) {
+    // a raw socket reset is a transport failure, not a client
+    // abort: the node path passes it through, so must this one
     const server = net.createServer(function (socket) {
       socket.write('partial')
       setTimeout(function () { socket.resetAndDestroy() }, 10)
@@ -315,6 +321,57 @@ describe('using web streams', function () {
         })
       })
     })
+  })
+
+  it('should abort reading when the signal aborts', function (done) {
+    const controller = new AbortController()
+
+    // a stalled producer: without the signal, this read would
+    // never settle and the caller has no way to unlock it
+    const stream = new ReadableStream({
+      start (c) {
+        c.enqueue(new TextEncoder().encode('partial'))
+      }
+    })
+
+    getRawBody(stream, { signal: controller.signal }, function (err) {
+      assert.ok(err)
+      assert.strictEqual(err.status, 408)
+      assert.strictEqual(err.type, 'request.timeout')
+      assert.strictEqual(err.code, 'ECONNABORTED')
+      assert.strictEqual(err.received, 7)
+      assert.strictEqual(err.cause, controller.signal.reason)
+
+      assert.strictEqual(stream.locked, false)
+      done()
+    })
+
+    setTimeout(function () { controller.abort() }, 10)
+  })
+
+  it('should error immediately when the signal is already aborted', async function () {
+    const stream = createWebStream(['hello, world!'])
+
+    await assert.rejects(getRawBody(stream, { signal: AbortSignal.abort() }), function (err) {
+      assert.strictEqual(err.status, 408)
+      assert.strictEqual(err.type, 'request.timeout')
+      return true
+    })
+
+    // the stream was never locked, so it is still usable
+    assert.strictEqual(stream.locked, false)
+  })
+
+  it('should remove the abort listener on completion', async function () {
+    const { getEventListeners } = require('events')
+    const controller = new AbortController()
+
+    const buf = await getRawBody(createWebStream(['hello, world!']), {
+      signal: controller.signal
+    })
+
+    assert.strictEqual(buf.toString(), 'hello, world!')
+    assert.strictEqual(getEventListeners(controller.signal, 'abort').length, 0)
   })
 
   it('should map destroyed Readable.toWeb streams to request.aborted', function (done) {

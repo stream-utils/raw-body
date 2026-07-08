@@ -135,4 +135,38 @@ describe('using http streams', function () {
       })
     })
   })
+
+  it('should time out a slow body via the signal', function (done) {
+    let socket
+    const server = http.createServer(function onRequest (req, res) {
+      getRawBody(req, {
+        length: req.headers['content-length'],
+        signal: AbortSignal.timeout(30)
+      }, function (err) {
+        server.close()
+        socket.destroy()
+
+        // a server-side read timeout is distinct from a client
+        // abort: 408 request.timeout, not 400 request.aborted
+        assert.ok(err)
+        assert.strictEqual(err.status, 408)
+        assert.strictEqual(err.type, 'request.timeout')
+        assert.strictEqual(err.code, 'ECONNABORTED')
+        assert.strictEqual(err.expected, 50)
+        assert.strictEqual(err.received, 10)
+        assert.strictEqual(err.cause.name, 'TimeoutError')
+        done()
+      })
+    })
+
+    server.listen(function onListen () {
+      socket = net.connect(server.address().port, function () {
+        socket.write('POST / HTTP/1.0\r\n')
+        socket.write('Content-Length: 50\r\n')
+        socket.write('\r\n')
+        // send only 10 of the 50 bytes, then stall the connection
+        socket.write('testing...')
+      })
+    })
+  })
 })

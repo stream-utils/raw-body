@@ -27,6 +27,12 @@ declare namespace getRawBody {
      * encoding is unsupported.
      */
     decoder?: (encoding: string) => Decoder;
+    /**
+     * An `AbortSignal` to abort reading the body. When it aborts, a
+     * 408 `request.timeout` error is returned with the signal's
+     * reason in `cause`.
+     */
+    signal?: AbortSignal;
   }
 
   export interface Decoder {
