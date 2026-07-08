@@ -57,6 +57,17 @@ export interface Options {
   decoder?: (encoding: string) => Decoder
 }
 
+/**
+ * The `type` values of the errors created by `raw-body`.
+ */
+export type RawBodyErrorType =
+  | 'encoding.unsupported'
+  | 'entity.too.large'
+  | 'request.aborted'
+  | 'request.size.invalid'
+  | 'stream.encoding.set'
+  | 'stream.not.readable'
+
 export interface RawBodyError extends Error {
   /**
    * The error code, when there is one, e.g. `ECONNABORTED` for
@@ -92,7 +103,7 @@ export interface RawBodyError extends Error {
    * absent on errors passed through from the stream or a custom
    * decoder.
    */
-  type?: string
+  type?: RawBodyErrorType
 }
 
 type Callback<T> = (err: RawBodyError | null, body: T) => void
