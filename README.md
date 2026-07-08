@@ -94,9 +94,9 @@ you want to keep the socket open for future requests. For streams
 that use file descriptors, you should `stream.destroy()` or
 `stream.close()` to prevent leaks.
 
-For web streams, the reader lock is released both on success and on
-error, but the stream is never canceled, so on error you are
-responsible for disposing it, for example with `stream.cancel()`.
+For web streams, any reader lock this module acquired is released both
+on success and on error, but the stream is never canceled, so on error
+you are responsible for disposing it, for example with `stream.cancel()`.
 
 ## Errors
 
@@ -110,6 +110,8 @@ otherwise an error created by this module, which has the following attributes:
   * `encoding` - the invalid encoding
   * `status` and `statusCode` - the corresponding status code for the error
   * `type` - the error type
+  * `cause` - the underlying error, when the error wraps another one
+    (for example an aborted web stream)
 
 ### Types
 
