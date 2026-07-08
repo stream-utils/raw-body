@@ -4,11 +4,6 @@ const http = require('http')
 const net = require('net')
 const { Readable } = require('stream')
 
-// socket.resetAndDestroy() requires node >= 18.3
-const itLiveReset = typeof net.Socket.prototype.resetAndDestroy === 'function'
-  ? it
-  : it.skip
-
 describe('using web streams', function () {
   it('should read a ReadableStream into a buffer', async function () {
     const buf = await getRawBody(createWebStream(['hello', ', ', 'world!']))
@@ -272,29 +267,7 @@ describe('using web streams', function () {
     })
   })
 
-  it('should not map non-abort connection resets to request.aborted', async function () {
-    // a raw socket reset is a transport failure, not a client
-    // abort: the node path passes it through, so must this one.
-    // this is the exact error a net.Socket read produces on a
-    // TCP RST (recreated: producing a live RST needs
-    // socket.resetAndDestroy, which requires node >= 18.3)
-    const reset = new Error('read ECONNRESET')
-    reset.code = 'ECONNRESET'
-
-    const stream = new ReadableStream({
-      start (controller) {
-        controller.error(reset)
-      }
-    })
-
-    await assert.rejects(getRawBody(stream), function (err) {
-      assert.strictEqual(err, reset)
-      assert.notStrictEqual(err.type, 'request.aborted')
-      return true
-    })
-  })
-
-  itLiveReset('should pass through a live socket reset unmapped', function (done) {
+  it('should pass through a live socket reset unmapped', function (done) {
     const server = net.createServer(function (socket) {
       socket.write('partial')
       setTimeout(function () { socket.resetAndDestroy() }, 10)
