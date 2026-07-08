@@ -239,9 +239,17 @@ function finish (decoder: Decoder | null, buffer: string | Buffer[], length: num
   let string: string | Buffer
 
   try {
-    string = decoder
-      ? buffer + (decoder.end() || '')
-      : Buffer.concat(buffer as Buffer[], total)
+    if (decoder) {
+      string = buffer + (decoder.end() || '')
+    } else {
+      const chunks = buffer as Buffer[]
+
+      // a body delivered in a single chunk, the common case for
+      // small bodies, is handed over as-is instead of copied
+      string = chunks.length === 1
+        ? chunks[0]
+        : Buffer.concat(chunks, total)
+    }
   } catch (err) {
     return done(err as Error)
   }
@@ -482,7 +490,9 @@ function readStream (stream: NodeJS.ReadableStream & { readableEncoding?: string
     if (complete) return
     if (err) return done(err)
 
-    finish(decoder, buffer as string | Buffer[], length, received, done)
+    // received is an exact byte count, since string chunks
+    // are rejected on this path
+    finish(decoder, buffer as string | Buffer[], length, received, done, received)
   }
 
   function cleanup (): void {
