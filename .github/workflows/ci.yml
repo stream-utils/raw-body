@@ -83,6 +83,60 @@ jobs:
         path: ./coverage/lcov.info
         retention-days: 1
 
+  test-bun:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    name: Bun - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
+
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: latest
+
+    - name: Install dependencies
+      run: bun install
+
+    - name: Output Bun version
+      run: bun --version
+
+    - name: Run tests
+      run: bun test
+
+  test-deno:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    name: Deno - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
+
+    - uses: actions/setup-node@v6
+      with:
+        node-version: 'lts/*'
+
+    - uses: denoland/setup-deno@v2
+      with:
+        deno-version: v2.x
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Output Deno version
+      run: deno --version
+
+    - name: Run tests
+      run: deno run -A npm:vitest run
+
   coverage:
     needs: test
     runs-on: ubuntu-latest
