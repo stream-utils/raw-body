@@ -86,7 +86,7 @@ export interface RawBodyError extends Error {
   type: string
 }
 
-type Callback<T> = (err: RawBodyError, body: T) => void
+type Callback<T> = (err: RawBodyError | null, body: T) => void
 type InternalCallback = (err?: Error | null, body?: Buffer | string) => void
 type CreateDecoder = (encoding: string) => Decoder
 

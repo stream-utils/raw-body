@@ -113,6 +113,7 @@ describe('Raw Body', function () {
       length,
       limit: length - 1
     }, function (err) {
+      assert.ok(err)
       assert.strictEqual(err.status, 413)
       assert.strictEqual(err.statusCode, 413)
       assert.strictEqual(err.expected, length)
@@ -148,6 +149,7 @@ describe('Raw Body', function () {
       length: 1,
       limit: 2
     }, function (err) {
+      assert.ok(err)
       assert.strictEqual(err.status, 400)
       done()
     })
@@ -159,6 +161,7 @@ describe('Raw Body', function () {
     getRawBody(createStream(), {
       limit: length - 1
     }, function (err) {
+      assert.ok(err)
       assert.strictEqual(err.status, 413)
       done()
     })
@@ -168,6 +171,7 @@ describe('Raw Body', function () {
     getRawBody(createStream(), {
       length: length - 1
     }, function (err) {
+      assert.ok(err)
       assert.strictEqual(err.status, 400)
       done()
     })
@@ -226,6 +230,7 @@ describe('Raw Body', function () {
     stream.setEncoding('utf8')
 
     getRawBody(stream, function (err) {
+      assert.ok(err)
       assert.strictEqual(err.status, 500)
       done()
     })
@@ -269,6 +274,7 @@ describe('Raw Body', function () {
       limit: length - 1
     }, function (err) {
       assert.strictEqual(returned, true)
+      assert.ok(err)
       assert.strictEqual(err.type, 'entity.too.large')
       done()
     })
@@ -298,7 +304,7 @@ describe('Raw Body', function () {
     const stream = new EventEmitter() as EventEmitter & { unpipe: () => void }
     stream.unpipe = function () {}
 
-    getRawBody(stream as never, function (err: NodeJS.ErrnoException) {
+    getRawBody(stream as never, function (err: NodeJS.ErrnoException | null) {
       assert.ok(err)
       assert.strictEqual(err.code, 'ERR_INVALID_ARG_TYPE')
       done()
@@ -317,9 +323,10 @@ describe('Raw Body', function () {
 
     let calls = 0
 
-    getRawBody(stream as never, { limit: 2 }, function (err: { status: number, type: string }) {
+    getRawBody(stream as never, { limit: 2 }, function (err) {
       calls++
       assert.strictEqual(calls, 1)
+      assert.ok(err)
       assert.strictEqual(err.status, 413)
       assert.strictEqual(err.type, 'entity.too.large')
 

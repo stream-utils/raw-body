@@ -481,6 +481,7 @@ describe('using web streams', function () {
       limit: 5
     }, function (err) {
       assert.strictEqual(returned, true)
+      assert.ok(err)
       assert.strictEqual(err.type, 'entity.too.large')
       done()
     })
