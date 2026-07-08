@@ -466,6 +466,16 @@ describe('Raw Body', function () {
       })
     }))
 
+    it('should handle encoding false as no decoding', withDone(function (done) {
+      getRawBody(createStream(), {
+        encoding: false
+      }, function (err, buf) {
+        assert.ifError(err)
+        checkBuffer(buf)
+        done()
+      })
+    }))
+
     it('should handle encoding true as utf-8', withDone(function (done) {
       getRawBody(createStream(), {
         encoding: true

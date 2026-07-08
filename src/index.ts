@@ -46,8 +46,10 @@ export interface Options {
    * `Buffer` instance will be returned when no encoding is specified. Most
    * likely, you want `utf-8`, so setting encoding to `true` will decode as
    * `utf-8`. You can use any encoding supported by `TextDecoder`.
+   * `false` (or any other falsy value) disables decoding, returning
+   * a `Buffer`.
    */
-  encoding?: Encoding | null
+  encoding?: Encoding | false | null
   /**
    * A function that receives the encoding and returns the decoder used to
    * turn the body into a string, instead of the built-in `TextDecoder`.
@@ -239,15 +241,35 @@ function finish (decoder: Decoder | null, buffer: string | Buffer[], length: num
 }
 
 /**
- * Gets the entire buffer of a stream either as a `Buffer` or a string.
- * Validates the stream's length against an expected length and maximum
- * limit. Ideal for parsing request bodies.
+ * Gets the entire buffer of a stream as a `Buffer`, delivered to the
+ * callback. Validates the stream's length against an expected length
+ * and maximum limit. Ideal for parsing request bodies.
  */
-
 function getRawBody (stream: RawBodyStream, callback: Callback<Buffer>): void
+/**
+ * Gets the entire buffer of a stream decoded as a string with the
+ * given encoding, delivered to the callback. Validates the stream's
+ * length against an expected length and maximum limit. Ideal for
+ * parsing request bodies.
+ */
 function getRawBody (stream: RawBodyStream, options: Readonly<Options & { encoding: Encoding }> | Encoding, callback: Callback<string>): void
+/**
+ * Gets the entire buffer of a stream as a `Buffer`, delivered to the
+ * callback. Validates the stream's length against an expected length
+ * and maximum limit. Ideal for parsing request bodies.
+ */
 function getRawBody (stream: RawBodyStream, options: Readonly<Options> | null, callback: Callback<Buffer>): void
+/**
+ * Gets the entire buffer of a stream decoded as a string with the
+ * given encoding. Validates the stream's length against an expected
+ * length and maximum limit. Ideal for parsing request bodies.
+ */
 function getRawBody (stream: RawBodyStream, options: Readonly<Options & { encoding: Encoding }> | Encoding): Promise<string>
+/**
+ * Gets the entire buffer of a stream as a `Buffer`. Validates the
+ * stream's length against an expected length and maximum limit.
+ * Ideal for parsing request bodies.
+ */
 function getRawBody (stream: RawBodyStream, options?: Readonly<Options> | null): Promise<Buffer>
 function getRawBody (stream: RawBodyStream, options?: Readonly<Options> | Encoding | Callback<Buffer> | null, callback?: Callback<Buffer> | Callback<string>): Promise<Buffer | string> | void {
   let done = callback as InternalCallback | undefined
@@ -278,10 +300,10 @@ function getRawBody (stream: RawBodyStream, options?: Readonly<Options> | Encodi
     throw new TypeError('argument callback must be a function')
   }
 
-  // get encoding
-  const encoding = opts.encoding !== true
-    ? opts.encoding
-    : 'utf-8'
+  // get encoding, treating any falsy value as "no decoding"
+  const encoding = opts.encoding === true
+    ? 'utf-8'
+    : (opts.encoding || null)
 
   // validate decoder is a function, if provided
   if (opts.decoder !== undefined && typeof opts.decoder !== 'function') {
