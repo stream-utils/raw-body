@@ -331,7 +331,7 @@ function readStream (stream, encoding, length, limit, createDecoder, signal, cal
 
   // attach listeners
   stream.on('aborted', onAborted)
-  stream.on('close', cleanup)
+  stream.on('close', onClose)
   stream.on('data', onData)
   stream.on('end', onEnd)
   stream.on('error', onEnd)
@@ -371,6 +371,14 @@ function readStream (stream, encoding, length, limit, createDecoder, signal, cal
   function onAborted () {
     if (complete) return
 
+    done(abortedError(length, received))
+  }
+
+  function onClose () {
+    if (complete) return
+
+    // closed without end or error: the read can never settle
+    // on its own, so treat it as an aborted body
     done(abortedError(length, received))
   }
 
@@ -419,7 +427,7 @@ function readStream (stream, encoding, length, limit, createDecoder, signal, cal
     stream.removeListener('data', onData)
     stream.removeListener('end', onEnd)
     stream.removeListener('error', onEnd)
-    stream.removeListener('close', cleanup)
+    stream.removeListener('close', onClose)
   }
 }
 

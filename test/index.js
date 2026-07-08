@@ -271,6 +271,25 @@ describe('Raw Body', function () {
     })
   })
 
+  it('should error when the stream closes before ending', function (done) {
+    const stream = new Readable({ read () {} })
+
+    getRawBody(stream, function (err) {
+      assert.ok(err)
+      assert.strictEqual(err.status, 400)
+      assert.strictEqual(err.type, 'request.aborted')
+      assert.strictEqual(err.received, 7)
+      done()
+    })
+
+    stream.push('partial')
+
+    setTimeout(function () {
+      // emits only 'close': the read would otherwise never settle
+      stream.destroy()
+    }, 10)
+  })
+
   it('should prefer the node stream interface when both are present', function (done) {
     const stream = createStream(Buffer.from('hello, world!'))
 
