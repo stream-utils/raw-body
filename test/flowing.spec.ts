@@ -6,7 +6,6 @@ import { withDone } from './support/with-done.ts'
 
 const defaultLimit = 1024 * 1024
 
-type TrackedStream = Readable & { wasPaused: boolean }
 type TrackedWebStream = ReadableStream<Uint8Array> & { pulls: number }
 
 describe('stream flowing', function () {
@@ -25,7 +24,7 @@ describe('stream flowing', function () {
         assert.strictEqual(err.length, defaultLimit * 2)
         assert.strictEqual(err.limit, defaultLimit)
         assert.strictEqual(body, undefined)
-        assert.ok(stream.wasPaused)
+        assert.ok(stream.isPaused())
 
         done()
       })
@@ -47,7 +46,7 @@ describe('stream flowing', function () {
         assert.strictEqual(err.message, 'request entity too large')
         assert.strictEqual(err.statusCode, 413)
         assert.strictEqual(body, undefined)
-        assert.ok(stream.wasPaused)
+        assert.ok(stream.isPaused())
         done()
       })
     }))
@@ -65,7 +64,7 @@ describe('stream flowing', function () {
         assert.strictEqual(err.type, 'stream.encoding.set')
         assert.strictEqual(err.message, 'stream encoding should not be set')
         assert.strictEqual(err.statusCode, 500)
-        assert.ok(stream.wasPaused)
+        assert.ok(stream.isPaused())
 
         done()
       })
@@ -84,7 +83,7 @@ describe('stream flowing', function () {
         assert.strictEqual(err.statusCode, 413)
         assert.ok(err.received! > defaultLimit)
         assert.strictEqual(err.limit, defaultLimit)
-        assert.ok(stream.wasPaused)
+        assert.ok(stream.isPaused())
 
         done()
       })
@@ -98,7 +97,7 @@ describe('stream flowing', function () {
       getRawBody(stream, function (err) {
         assert.ok(err)
         assert.strictEqual(err.message, 'BOOM')
-        assert.ok(stream.wasPaused)
+        assert.ok(stream.isPaused())
 
         done()
       })
@@ -210,8 +209,8 @@ function createBlackholeStream (): Writable {
   return stream
 }
 
-function createInfiniteStream (paused?: boolean): TrackedStream {
-  const stream = new Readable() as TrackedStream
+function createInfiniteStream (paused?: boolean): Readable {
+  const stream = new Readable()
   stream._read = function () {
     const rand = 2 + Math.floor(Math.random() * 10)
 
@@ -221,11 +220,6 @@ function createInfiniteStream (paused?: boolean): TrackedStream {
       }
     }, 100)
   }
-
-  // track paused state for tests
-  stream.wasPaused = false
-  stream.on('pause', function (this: TrackedStream) { this.wasPaused = true })
-  stream.on('resume', function (this: TrackedStream) { this.wasPaused = false })
 
   // immediately put the stream in flowing mode
   if (!paused) {
