@@ -6,6 +6,7 @@ import type { ReadableWritablePair } from 'node:stream/web'
 import iconv from 'iconv-lite'
 import { describe, it } from 'vitest'
 import getRawBody, { type RawBodyError } from '../src/index.ts'
+import { hasIsDisturbed, isBun } from './support/runtime.ts'
 import { withDone } from './support/with-done.ts'
 
 describe('using web streams', function () {
@@ -189,7 +190,7 @@ describe('using web streams', function () {
     await piped.cancel()
   })
 
-  it('should error when the stream was cancelled', async function () {
+  it.skipIf(!hasIsDisturbed)('should error when the stream was cancelled', async function () {
     const stream = createWebStream(['hello, world!'])
     await stream.cancel()
 
@@ -200,7 +201,7 @@ describe('using web streams', function () {
     })
   })
 
-  it('should error when the stream was already read', async function () {
+  it.skipIf(!hasIsDisturbed)('should error when the stream was already read', async function () {
     const stream = createWebStream(['hello, world!'])
     const reader = stream.getReader()
     while (!(await reader.read()).done);
@@ -237,7 +238,8 @@ describe('using web streams', function () {
     })
   })
 
-  it('should map aborts from Readable.toWeb request streams', withDone(function (done) {
+  // Bun's Readable.toWeb does not surface premature-close errors from sockets
+  it.skipIf(isBun)('should map aborts from Readable.toWeb request streams', withDone(function (done) {
     const server = http.createServer(function (req, res) {
       getRawBody(Readable.toWeb(req), {
         length: req.headers['content-length'],
@@ -269,7 +271,8 @@ describe('using web streams', function () {
     })
   }))
 
-  it('should pass through a live socket reset unmapped', withDone(function (done) {
+  // Bun's Readable.toWeb does not propagate socket reset errors
+  it.skipIf(isBun)('should pass through a live socket reset unmapped', withDone(function (done) {
     const server = net.createServer(function (socket) {
       socket.write('partial')
       setTimeout(function () { socket.resetAndDestroy() }, 10)
@@ -489,7 +492,8 @@ describe('using web streams', function () {
     returned = true
   }))
 
-  it('should not catch or re-invoke a callback that throws', async function () {
+  // Bun's test runner intercepts the throw before it reaches unhandledRejection
+  it.skipIf(isBun)('should not catch or re-invoke a callback that throws', async function () {
     // take over unhandled rejections for this test, so the runner's
     // own handler does not fail the test for the expected one
     const listeners = process.listeners('unhandledRejection')

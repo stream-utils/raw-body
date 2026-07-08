@@ -3,6 +3,7 @@ import http2 from 'node:http2'
 import net from 'node:net'
 import { describe, it } from 'vitest'
 import getRawBody from '../src/index.ts'
+import { isBun } from './support/runtime.ts'
 import { withDone } from './support/with-done.ts'
 
 describe('using http2 streams', function () {
@@ -39,7 +40,8 @@ describe('using http2 streams', function () {
     })
   }))
 
-  it('should read body streams', withDone(function (done) {
+  // Bun's node:http2 server does not deliver body data on the stream API
+  it.skipIf(isBun)('should read body streams', withDone(function (done) {
     const server = http2.createServer()
 
     server.on('stream', function onStream (stream: http2.ServerHttp2Stream, headers: http2.IncomingHttpHeaders) {
