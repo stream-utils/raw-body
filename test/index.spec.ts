@@ -349,8 +349,9 @@ describe('Raw Body', function () {
   }))
 
   it('should error on string chunks without an encoding', withDone(function (done) {
-    const stream = new EventEmitter() as EventEmitter & { unpipe: () => void }
+    const stream = new EventEmitter() as EventEmitter & { unpipe: () => void, pause: () => void }
     stream.unpipe = function () {}
+    stream.pause = function () {}
 
     getRawBody(stream as never, function (err) {
       assert.ok(err)
@@ -363,9 +364,10 @@ describe('Raw Body', function () {
     stream.emit('end')
   }))
 
-  it('should halt the stream on error, even without pause', withDone(function (done) {
-    const stream = new EventEmitter() as EventEmitter & { unpipe: () => void }
+  it('should halt the stream on error', withDone(function (done) {
+    const stream = new EventEmitter() as EventEmitter & { unpipe: () => void, pause: () => void }
     stream.unpipe = function () {}
+    stream.pause = function () {}
 
     // keep the listeners attached, so late events reach the handlers
     stream.removeListener = function () { return this }
@@ -651,8 +653,9 @@ describe('Raw Body', function () {
   it('should error on string chunks even with an encoding', withDone(function (done) {
     // string chunks are already decoded, like the web path: decoding
     // them again with the declared encoding would corrupt the data
-    const stream = new EventEmitter() as EventEmitter & { unpipe: () => void }
+    const stream = new EventEmitter() as EventEmitter & { unpipe: () => void, pause: () => void }
     stream.unpipe = function () {}
+    stream.pause = function () {}
 
     getRawBody(stream as never, {
       encoding: true,

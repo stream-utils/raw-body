@@ -348,9 +348,7 @@ function halt (stream: NodeJS.ReadableStream): void {
   stream.unpipe()
 
   // pause stream
-  if (typeof stream.pause === 'function') {
-    stream.pause()
-  }
+  stream.pause()
 }
 
 /**
