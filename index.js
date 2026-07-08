@@ -105,6 +105,32 @@ function abortedError (length, received, cause) {
 }
 
 /**
+ * Create a 408 request timeout error, used when the `signal`
+ * option aborts (server-initiated), as opposed to a client abort.
+ *
+ * @param {number} length
+ * @param {number} received
+ * @param {*} [cause]
+ * @private
+ */
+
+function requestTimeoutError (length, received, cause) {
+  const err = createError(408, 'request timeout', {
+    code: 'ECONNABORTED',
+    expected: length,
+    length,
+    received,
+    type: 'request.timeout'
+  })
+
+  if (cause !== undefined) {
+    err.cause = cause
+  }
+
+  return err
+}
+
+/**
  * Create a 400 size mismatch error.
  *
  * @param {number} length
@@ -323,7 +349,7 @@ function readStream (stream, encoding, length, limit, createDecoder, signal, cal
 
   if (signal) {
     if (signal.aborted) {
-      return done(abortedError(length, received, signal.reason))
+      return done(requestTimeoutError(length, received, signal.reason))
     }
 
     signal.addEventListener('abort', onSignalAbort, { once: true })
@@ -385,7 +411,7 @@ function readStream (stream, encoding, length, limit, createDecoder, signal, cal
   function onSignalAbort () {
     // the listener is removed on completion, so this only
     // fires while the read is still in progress
-    done(abortedError(length, received, signal.reason))
+    done(requestTimeoutError(length, received, signal.reason))
   }
 
   function onData (chunk) {
@@ -495,7 +521,7 @@ function readWebStream (stream, encoding, length, limit, createDecoder, signal, 
 
   if (signal) {
     if (signal.aborted) {
-      return fail(abortedError(length, received, signal.reason))
+      return fail(requestTimeoutError(length, received, signal.reason))
     }
 
     signal.addEventListener('abort', onSignalAbort, { once: true })
@@ -529,7 +555,7 @@ function readWebStream (stream, encoding, length, limit, createDecoder, signal, 
   }
 
   function onSignalAbort () {
-    done(abortedError(length, received, signal.reason))
+    done(requestTimeoutError(length, received, signal.reason))
   }
 
   function fail (err) {

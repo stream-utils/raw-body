@@ -305,8 +305,8 @@ describe('using web streams', function () {
 
     getRawBody(stream, { signal: controller.signal }, function (err) {
       assert.ok(err)
-      assert.strictEqual(err.status, 400)
-      assert.strictEqual(err.type, 'request.aborted')
+      assert.strictEqual(err.status, 408)
+      assert.strictEqual(err.type, 'request.timeout')
       assert.strictEqual(err.code, 'ECONNABORTED')
       assert.strictEqual(err.received, 7)
       assert.strictEqual(err.cause, controller.signal.reason)
@@ -322,8 +322,8 @@ describe('using web streams', function () {
     const stream = createWebStream(['hello, world!'])
 
     await assert.rejects(getRawBody(stream, { signal: AbortSignal.abort() }), function (err) {
-      assert.strictEqual(err.status, 400)
-      assert.strictEqual(err.type, 'request.aborted')
+      assert.strictEqual(err.status, 408)
+      assert.strictEqual(err.type, 'request.timeout')
       return true
     })
 

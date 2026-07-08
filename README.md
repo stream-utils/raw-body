@@ -88,8 +88,9 @@ getRawBody(stream, {
 - `signal` - An [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)
   to abort reading the body, for example from `AbortSignal.timeout()` or an
   `AbortController` tied to the request lifecycle. When the signal aborts,
-  reading stops and a `400` error with type `request.aborted` is returned,
-  carrying the signal's reason in `cause`.
+  reading stops and a `408` error with type `request.timeout` is returned,
+  carrying the signal's reason in `cause`. This is distinct from a client
+  disconnect, which returns a `400` `request.aborted`.
 
 You can also pass a string in place of options to just specify the encoding.
 
@@ -137,8 +138,13 @@ an entity that is larger.
 #### request.aborted
 
 This error will occur when the request stream is aborted by the client before
-reading the body has finished, or when the `AbortSignal` passed via the
-`signal` option aborts.
+reading the body has finished.
+
+#### request.timeout
+
+This error will occur when the `AbortSignal` passed via the `signal` option
+aborts before reading the body has finished, for example on a server-side
+read timeout.
 
 #### request.size.invalid
 

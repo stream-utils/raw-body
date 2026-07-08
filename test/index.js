@@ -251,8 +251,8 @@ describe('Raw Body', function () {
 
     getRawBody(stream, { signal: controller.signal }, function (err) {
       assert.ok(err)
-      assert.strictEqual(err.status, 400)
-      assert.strictEqual(err.type, 'request.aborted')
+      assert.strictEqual(err.status, 408)
+      assert.strictEqual(err.type, 'request.timeout')
       assert.strictEqual(err.received, 7)
       assert.strictEqual(err.cause, controller.signal.reason)
       assert.ok(stream.isPaused())
@@ -265,8 +265,8 @@ describe('Raw Body', function () {
   it('should error immediately when the signal is already aborted', function (done) {
     getRawBody(createStream(), { signal: AbortSignal.abort() }, function (err) {
       assert.ok(err)
-      assert.strictEqual(err.status, 400)
-      assert.strictEqual(err.type, 'request.aborted')
+      assert.strictEqual(err.status, 408)
+      assert.strictEqual(err.type, 'request.timeout')
       done()
     })
   })

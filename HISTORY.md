@@ -2,8 +2,8 @@ unreleased
 ==================
 
   * Add `signal` option to abort reading the body with an `AbortSignal`;
-    aborting produces a 400 `request.aborted` error with the signal's
-    reason in `cause`
+    aborting produces a 408 `request.timeout` error with the signal's
+    reason in `cause`, distinct from a client abort's 400 `request.aborted`
   * Error with a 400 `request.aborted` when a node stream closes before
     ending, instead of never settling
   * Add support for WHATWG `ReadableStream` (web streams): `fetch`
