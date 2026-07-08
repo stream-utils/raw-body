@@ -8,6 +8,8 @@
 
 - Migrate to TypeScript and publish as ESM-only - by [@bjohansebas](https://github.com/bjohansebas) in [#157](https://github.com/stream-utils/raw-body/pull/157)
 
+    CommonJS consumers can keep loading the package through `require(esm)`.
+
 - Use native `TextDecoder` instead of `iconv-lite` - by [@bjohansebas](https://github.com/bjohansebas) in [#143](https://github.com/stream-utils/raw-body/pull/143)
 
     Supported encodings are now those of the [WHATWG Encoding Standard](https://encoding.spec.whatwg.org/#names-and-labels); encodings outside the standard (e.g. UTF-32) now throw a 415 error. `utf-16` no longer detects a big-endian BOM and always decodes as little-endian; use `utf-16be` for big-endian content.
