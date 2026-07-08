@@ -11,8 +11,6 @@ import type { ReadableStreamReadResult } from 'node:stream/web'
 import bytes from 'bytes'
 import createError from 'http-errors'
 
-const { isDisturbed } = Readable
-
 /**
  * The encoding to decode the body with. `true` decodes as `utf-8`.
  */
@@ -510,9 +508,10 @@ function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: s
     return fail(entityTooLargeError({ expected: length, length, limit }))
   }
 
-  // reject streams locked to another reader, and streams
-  // already read or cancelled (disturbed)
-  if (stream.locked || isDisturbed(stream)) {
+  // reject streams locked to another reader. note: cancelled or
+  // fully-read streams cannot be detected portably (no runtime-agnostic
+  // access to the disturbed flag) and read as an empty body
+  if (stream.locked) {
     return fail(notReadableError())
   }
 
