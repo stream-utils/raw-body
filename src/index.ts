@@ -396,7 +396,7 @@ function readStream (stream: NodeJS.ReadableStream & { readableEncoding?: string
 
   // attach listeners
   stream.on('aborted', onAborted)
-  stream.on('close', cleanup)
+  stream.on('close', onClose)
   stream.on('data', onData)
   stream.on('end', onEnd)
   stream.on('error', onEnd)
@@ -429,6 +429,15 @@ function readStream (stream: NodeJS.ReadableStream & { readableEncoding?: string
   function onAborted (): void {
     if (complete) return
 
+    done(abortedError(length, received))
+  }
+
+  function onClose (): void {
+    if (complete) return cleanup()
+
+    // the stream was destroyed before finishing, without emitting
+    // an error: surface an aborted request, like the web path,
+    // instead of never settling
     done(abortedError(length, received))
   }
 
@@ -467,7 +476,7 @@ function readStream (stream: NodeJS.ReadableStream & { readableEncoding?: string
     stream.removeListener('data', onData)
     stream.removeListener('end', onEnd)
     stream.removeListener('error', onEnd)
-    stream.removeListener('close', cleanup)
+    stream.removeListener('close', onClose)
   }
 }
 
