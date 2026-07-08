@@ -177,6 +177,31 @@ describe('Raw Body', function () {
     })
   }))
 
+  it('should work if limit is null', withDone(function (done) {
+    getRawBody(createStream(), {
+      length,
+      limit: null
+    }, function (err, buf) {
+      assert.ifError(err)
+      checkBuffer(buf)
+      done()
+    })
+  }))
+
+  it('should not enforce a limit when limit is null', withDone(function (done) {
+    const stream = new Readable()
+    stream.push('hello, world!')
+    stream.push(null)
+
+    getRawBody(stream, {
+      limit: null
+    }, function (err, buf) {
+      assert.ifError(err)
+      assert.strictEqual(buf.toString(), 'hello, world!')
+      done()
+    })
+  }))
+
   it('should work with if length is null', withDone(function (done) {
     getRawBody(createStream(), {
       length: null,
