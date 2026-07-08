@@ -1,8 +1,8 @@
-'use strict'
-const neostandard = require('neostandard')
+import neostandard from 'neostandard'
 
-module.exports = [
+export default [
   ...neostandard({
-    env: ['mocha'],
+    ts: true,
+    ignores: ['dist', 'coverage']
   })
 ]

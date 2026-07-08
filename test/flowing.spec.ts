@@ -1,16 +1,16 @@
-const assert = require('assert')
-const Readable = require('stream').Readable
-const Writable = require('stream').Writable
-
-const getRawBody = require('../')
+import assert from 'node:assert'
+import { Readable, Writable } from 'node:stream'
+import { describe, it } from 'vitest'
+import getRawBody from '../src/index.ts'
+import { withDone } from './support/with-done.ts'
 
 const defaultLimit = 1024 * 1024
 
-describe('stream flowing', function () {
-  this.timeout(5000)
+type TrackedWebStream = ReadableStream<Uint8Array> & { pulls: number }
 
-  describe('when limit lower then length', function (done) {
-    it('should stop the steam flow', function (done) {
+describe('stream flowing', function () {
+  describe('when limit lower then length', function () {
+    it('should stop the steam flow', withDone(function (done) {
       const stream = createInfiniteStream()
 
       getRawBody(stream, {
@@ -24,13 +24,13 @@ describe('stream flowing', function () {
         assert.strictEqual(err.length, defaultLimit * 2)
         assert.strictEqual(err.limit, defaultLimit)
         assert.strictEqual(body, undefined)
-        assert.ok(stream.isPaused)
+        assert.ok(stream.isPaused())
 
         done()
       })
-    })
+    }))
 
-    it('should halt flowing stream', function (done) {
+    it('should halt flowing stream', withDone(function (done) {
       const stream = createInfiniteStream(true)
       const dest = createBlackholeStream()
 
@@ -46,58 +46,58 @@ describe('stream flowing', function () {
         assert.strictEqual(err.message, 'request entity too large')
         assert.strictEqual(err.statusCode, 413)
         assert.strictEqual(body, undefined)
-        assert.ok(stream.isPaused)
+        assert.ok(stream.isPaused())
         done()
       })
-    })
+    }))
   })
 
-  describe('when stream has encoding set', function (done) {
-    it('should stop the steam flow', function (done) {
+  describe('when stream has encoding set', function () {
+    it('should stop the steam flow', withDone(function (done) {
       const stream = createInfiniteStream()
       stream.setEncoding('utf8')
 
       getRawBody(stream, {
         limit: defaultLimit
-      }, function (err, body) {
+      }, function (err) {
         assert.ok(err)
         assert.strictEqual(err.type, 'stream.encoding.set')
         assert.strictEqual(err.message, 'stream encoding should not be set')
         assert.strictEqual(err.statusCode, 500)
-        assert.ok(stream.isPaused)
+        assert.ok(stream.isPaused())
 
         done()
       })
-    })
+    }))
   })
 
-  describe('when stream has limit', function (done) {
-    it('should stop the steam flow', function (done) {
+  describe('when stream has limit', function () {
+    it('should stop the steam flow', withDone(function (done) {
       const stream = createInfiniteStream()
 
       getRawBody(stream, {
         limit: defaultLimit
-      }, function (err, body) {
+      }, function (err) {
         assert.ok(err)
         assert.strictEqual(err.type, 'entity.too.large')
         assert.strictEqual(err.statusCode, 413)
-        assert.ok(err.received > defaultLimit)
+        assert.ok(err.received! > defaultLimit)
         assert.strictEqual(err.limit, defaultLimit)
-        assert.ok(stream.isPaused)
+        assert.ok(stream.isPaused())
 
         done()
       })
-    })
+    }))
   })
 
-  describe('when stream has limit', function (done) {
-    it('should stop the steam flow', function (done) {
+  describe('when stream errors', function () {
+    it('should stop the steam flow', withDone(function (done) {
       const stream = createInfiniteStream()
 
-      getRawBody(stream, function (err, body) {
+      getRawBody(stream, function (err) {
         assert.ok(err)
         assert.strictEqual(err.message, 'BOOM')
-        assert.ok(stream.isPaused)
+        assert.ok(stream.isPaused())
 
         done()
       })
@@ -105,11 +105,11 @@ describe('stream flowing', function () {
       setTimeout(function () {
         stream.emit('error', new Error('BOOM'))
       }, 500)
-    })
+    }))
   })
 
   describe('when a web stream exceeds the limit', function () {
-    it('should stop pulling', function (done) {
+    it('should stop pulling', withDone(function (done) {
       const stream = createInfiniteWebStream()
 
       getRawBody(stream, {
@@ -117,14 +117,14 @@ describe('stream flowing', function () {
       }, function (err) {
         assert.ok(err)
         assert.strictEqual(err.type, 'entity.too.large')
-        assert.ok(err.received > defaultLimit)
+        assert.ok(err.received! > defaultLimit)
         assert.strictEqual(stream.locked, false)
 
         assertPullsSettle(stream, done)
       })
-    })
+    }))
 
-    it('should not pull when length exceeds limit', function (done) {
+    it('should not pull when length exceeds limit', withDone(function (done) {
       const stream = createInfiniteWebStream()
 
       getRawBody(stream, {
@@ -139,7 +139,7 @@ describe('stream flowing', function () {
         assert.ok(stream.pulls <= 1)
         assertPullsSettle(stream, done)
       })
-    })
+    }))
   })
 })
 
@@ -148,7 +148,7 @@ describe('stream flowing', function () {
  * queue refills to its high water mark, pulls stop growing.
  */
 
-function assertPullsSettle (stream, done) {
+function assertPullsSettle (stream: TrackedWebStream, done: () => void): void {
   setTimeout(function () {
     const settled = stream.pulls
 
@@ -159,7 +159,7 @@ function assertPullsSettle (stream, done) {
   }, 100)
 }
 
-function createInfiniteWebStream () {
+function createInfiniteWebStream (): TrackedWebStream {
   let pulls = 0
 
   const stream = new ReadableStream({
@@ -174,10 +174,10 @@ function createInfiniteWebStream () {
     get () { return pulls }
   })
 
-  return stream
+  return stream as TrackedWebStream
 }
 
-function createChunk () {
+function createChunk (): string {
   const base = Math.random().toString(32)
   const KB_4 = 32 * 4
   const KB_8 = KB_4 * 2
@@ -195,12 +195,12 @@ function createChunk () {
     return repeat(base, KB_64)
   }
 
-  function repeat (str, num) {
+  function repeat (str: string, num: number): string {
     return new Array(num + 1).join(str)
   }
 }
 
-function createBlackholeStream () {
+function createBlackholeStream (): Writable {
   const stream = new Writable()
   stream._write = function (chunk, encoding, cb) {
     cb()
@@ -209,7 +209,7 @@ function createBlackholeStream () {
   return stream
 }
 
-function createInfiniteStream (paused) {
+function createInfiniteStream (paused?: boolean): Readable {
   const stream = new Readable()
   stream._read = function () {
     const rand = 2 + Math.floor(Math.random() * 10)
@@ -220,11 +220,6 @@ function createInfiniteStream (paused) {
       }
     }, 100)
   }
-
-  // track paused state for tests
-  stream.isPaused = false
-  stream.on('pause', function () { this.isPaused = true })
-  stream.on('resume', function () { this.isPaused = false })
 
   // immediately put the stream in flowing mode
   if (!paused) {
