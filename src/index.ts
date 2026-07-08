@@ -517,6 +517,8 @@ function toBuffer (chunk: unknown): Buffer {
 
 function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: string | undefined | null, length: number | null, limit: number | null, createDecoder: CreateDecoder | undefined, callback: InternalCallback): void {
   let buffer: string | Buffer[] | null
+  let body: Uint8Array | null = null
+  let offset = 0
   let reader: ReadableStreamDefaultReader<Uint8Array | string> | null = null
 
   // check the length and limit options.
@@ -580,6 +582,7 @@ function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: s
 
   function done (err?: Error | null, string?: Buffer | string): void {
     buffer = null
+    body = null
 
     if (reader) {
       // release the stream, so users can handle the rest themselves
@@ -589,9 +592,30 @@ function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: s
     callback(err, string)
   }
 
+  /**
+   * Copy the chunk (the producer may reuse its memory) straight
+   * into the preallocated body, skipping the assembly copy.
+   */
+
+  function append (chunk: Buffer): void {
+    if (body === null) {
+      // only trust the declared length when the limit bounds it
+      const size = limit !== null ? length! : Math.min(length!, 1024 * 1024)
+
+      body = new Uint8Array(Math.max(size, received))
+    } else if (received > body.length) {
+      // excess over a capped allocation still has to be buffered
+      const grown = new Uint8Array(Math.max(body.length * 2, received))
+      grown.set(body.subarray(0, offset))
+      body = grown
+    }
+
+    body.set(chunk, offset)
+    offset = received
+  }
+
   function onRead (result: ReadableStreamReadResult<Uint8Array | string>): void {
-    // received is an exact byte count on this path
-    if (result.done) return finish(decoder, buffer as string | Buffer[], length, received, done, received)
+    if (result.done) return onDone()
 
     // a stream of strings is already decoded, so decoding it
     // again with the declared encoding would corrupt the data
@@ -616,6 +640,8 @@ function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: s
         if (decoder) {
           // consumed immediately: the zero-copy view is safe
           buffer += decoder.write(chunk)
+        } else if (length !== null) {
+          append(chunk)
         } else {
           // copy: the producer may reuse the chunk's memory
           (buffer as Buffer[]).push(Buffer.from(chunk))
@@ -626,5 +652,21 @@ function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: s
 
       read()
     }
+  }
+
+  function onDone (): void {
+    if (length !== null && received !== length) {
+      return done(sizeMismatchError(length, received))
+    }
+
+    if (decoder === null && length !== null) {
+      if (body === null) return done(null, Buffer.alloc(0))
+
+      // zero-copy view of the accumulator
+      return done(null, Buffer.from(body.buffer, body.byteOffset, offset))
+    }
+
+    // received is an exact byte count on this path
+    finish(decoder, buffer as string | Buffer[], length, received, done, received)
   }
 }

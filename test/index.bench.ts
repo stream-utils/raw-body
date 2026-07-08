@@ -86,4 +86,18 @@ for (const scenario of scenarios) {
       await getRawBody(webStream(chunks), stringOptions)
     })
   })
+
+  // without a Content-Length the web path cannot preallocate the
+  // body and falls back to buffering chunks, like chunked encoding
+  describe(`${scenario.name} -> Buffer, unknown length`, () => {
+    const noLengthOptions = { limit: scenario.limit }
+
+    bench('node stream', async () => {
+      await getRawBody(nodeStream(chunks), noLengthOptions)
+    })
+
+    bench('web stream', async () => {
+      await getRawBody(webStream(chunks), noLengthOptions)
+    })
+  })
 }

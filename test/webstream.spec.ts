@@ -431,6 +431,36 @@ describe('using web streams', function () {
     assert.strictEqual(buf.toString(), 'aaaabbbbcccc')
   })
 
+  it('should copy reused chunk memory with a known length', async function () {
+    // same guarantee on the preallocated-body path taken
+    // when the length option is set
+    const scratch = new Uint8Array(4)
+    const parts = ['aaaa', 'bbbb', 'cccc']
+    let reads = 0
+
+    const stream = new ReadableStream<Uint8Array>({
+      pull (controller) {
+        if (reads === parts.length) return controller.close()
+        scratch.set(new TextEncoder().encode(parts[reads++]))
+        controller.enqueue(scratch)
+      }
+    })
+
+    const buf = await getRawBody(stream, { length: 12, limit: '1kb' })
+    assert.strictEqual(buf.toString(), 'aaaabbbbcccc')
+  })
+
+  it('should buffer more data than a capped allocation', async function () {
+    // without a limit the allocation starts capped at 1mb, so a
+    // later chunk must overflow it and force the body to grow
+    const chunk = Buffer.alloc(768 * 1024, 0x61)
+    const big = Buffer.concat([chunk, chunk])
+
+    const buf = await getRawBody(createWebStream([chunk, chunk]), { length: big.length })
+    assert.strictEqual(buf.length, big.length)
+    assert.ok(buf.equals(big))
+  })
+
   it('should release the lock when finished', async function () {
     const stream = createWebStream(['hello, world!'])
     await getRawBody(stream)
