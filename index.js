@@ -519,15 +519,16 @@ function readWebStream (stream, encoding, length, limit, createDecoder, signal, 
     ? ''
     : []
 
-  if (signal) {
-    if (signal.aborted) {
-      return fail(requestTimeoutError(length, received, signal.reason))
-    }
 
-    signal.addEventListener('abort', onSignalAbort, { once: true })
+  if (signal && signal.aborted) {
+    return fail(requestTimeoutError(length, received, signal.reason))
   }
 
   reader = stream.getReader()
+
+  if (signal) {
+    signal.addEventListener('abort', onSignalAbort, { once: true })
+  }
 
   read()
 
