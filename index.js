@@ -519,7 +519,6 @@ function readWebStream (stream, encoding, length, limit, createDecoder, signal, 
     ? ''
     : []
 
-
   if (signal && signal.aborted) {
     return fail(requestTimeoutError(length, received, signal.reason))
   }

@@ -267,6 +267,37 @@ describe('using web streams', function () {
     })
   })
 
+  it('should time out a slow Readable.toWeb body via the signal', function (done) {
+    const server = http.createServer(function (req, res) {
+      getRawBody(Readable.toWeb(req), {
+        length: req.headers['content-length'],
+        signal: AbortSignal.timeout(30)
+      }, function (err) {
+        res.destroy()
+        server.close()
+
+        assert.ok(err)
+        assert.strictEqual(err.status, 408)
+        assert.strictEqual(err.type, 'request.timeout')
+        assert.strictEqual(err.received, 7)
+        assert.strictEqual(err.cause.name, 'TimeoutError')
+        done()
+      })
+    })
+
+    server.listen(0, function () {
+      const req = http.request({
+        port: server.address().port,
+        method: 'POST',
+        headers: { 'content-length': '100' }
+      })
+
+      req.on('error', function () {})
+      req.write('partial')
+      // never sends the remaining bytes; the signal fires
+    })
+  })
+
   it('should pass through a live socket reset unmapped', function (done) {
     // a raw socket reset is a transport failure, not a client
     // abort: the node path passes it through, so must this one
