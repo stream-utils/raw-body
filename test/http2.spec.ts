@@ -115,7 +115,7 @@ describe('using http2 streams', function () {
       getRawBody(req, { length: req.headers['content-length'] }, function (err) {
         server.close()
         assert.ok(err)
-        assert.strictEqual((err as NodeJS.ErrnoException).code, 'ECONNABORTED')
+        assert.strictEqual(err.code, 'ECONNABORTED')
         assert.strictEqual(err.expected, 50)
         assert.strictEqual(err.message, 'request aborted')
         assert.strictEqual(err.received, 10)

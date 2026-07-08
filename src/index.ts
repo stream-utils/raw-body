@@ -59,6 +59,11 @@ export interface Options {
 
 export interface RawBodyError extends Error {
   /**
+   * The error code, when there is one, e.g. `ECONNABORTED` for
+   * aborted requests.
+   */
+  code?: string
+  /**
    * The limit in bytes.
    */
   limit?: number
@@ -76,14 +81,18 @@ export interface RawBodyError extends Error {
    */
   encoding?: string
   /**
-   * The corresponding status code for the error.
+   * The corresponding status code for the error. Errors created by
+   * `raw-body` always carry one, but errors passed through from the
+   * stream or a custom decoder may not.
    */
-  status: number
-  statusCode: number
+  status?: number
+  statusCode?: number
   /**
-   * The error type.
+   * The error type. Set on every error created by `raw-body`, but
+   * absent on errors passed through from the stream or a custom
+   * decoder.
    */
-  type: string
+  type?: string
 }
 
 type Callback<T> = (err: RawBodyError | null, body: T) => void

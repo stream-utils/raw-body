@@ -227,7 +227,7 @@ describe('using web streams', function () {
       }
     })
 
-    await assert.rejects(getRawBody(stream, { length: 10 }), function (err: RawBodyError & { code?: string }) {
+    await assert.rejects(getRawBody(stream, { length: 10 }), function (err: RawBodyError) {
       assert.strictEqual(err.status, 400)
       assert.strictEqual(err.type, 'request.aborted')
       assert.strictEqual(err.code, 'ECONNABORTED')
@@ -249,7 +249,7 @@ describe('using web streams', function () {
         assert.ok(err)
         assert.strictEqual(err.status, 400)
         assert.strictEqual(err.type, 'request.aborted')
-        assert.strictEqual((err as RawBodyError & { code?: string }).code, 'ECONNABORTED')
+        assert.strictEqual(err.code, 'ECONNABORTED')
         assert.ok(err.cause)
         done()
       })
@@ -283,7 +283,7 @@ describe('using web streams', function () {
           server.close()
 
           assert.ok(err)
-          assert.strictEqual((err as RawBodyError & { code?: string }).code, 'ECONNRESET')
+          assert.strictEqual(err.code, 'ECONNRESET')
           assert.strictEqual(err.message, 'read ECONNRESET')
           assert.notStrictEqual(err.type, 'request.aborted')
           done()

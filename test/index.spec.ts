@@ -304,7 +304,7 @@ describe('Raw Body', function () {
     const stream = new EventEmitter() as EventEmitter & { unpipe: () => void }
     stream.unpipe = function () {}
 
-    getRawBody(stream as never, function (err: NodeJS.ErrnoException | null) {
+    getRawBody(stream as never, function (err) {
       assert.ok(err)
       assert.strictEqual(err.code, 'ERR_INVALID_ARG_TYPE')
       done()
