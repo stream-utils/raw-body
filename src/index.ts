@@ -245,13 +245,13 @@ function finish (decoder: Decoder | null, buffer: string | Buffer[], length: num
  */
 
 function getRawBody (stream: RawBodyStream, callback: Callback<Buffer>): void
-function getRawBody (stream: RawBodyStream, options: (Options & { encoding: Encoding }) | Encoding, callback: Callback<string>): void
-function getRawBody (stream: RawBodyStream, options: Options, callback: Callback<Buffer>): void
-function getRawBody (stream: RawBodyStream, options: (Options & { encoding: Encoding }) | Encoding): Promise<string>
-function getRawBody (stream: RawBodyStream, options?: Options): Promise<Buffer>
-function getRawBody (stream: RawBodyStream, options?: Options | Encoding | Callback<Buffer>, callback?: Callback<Buffer> | Callback<string>): Promise<Buffer | string> | void {
+function getRawBody (stream: RawBodyStream, options: Readonly<Options & { encoding: Encoding }> | Encoding, callback: Callback<string>): void
+function getRawBody (stream: RawBodyStream, options: Readonly<Options> | null, callback: Callback<Buffer>): void
+function getRawBody (stream: RawBodyStream, options: Readonly<Options & { encoding: Encoding }> | Encoding): Promise<string>
+function getRawBody (stream: RawBodyStream, options?: Readonly<Options> | null): Promise<Buffer>
+function getRawBody (stream: RawBodyStream, options?: Readonly<Options> | Encoding | Callback<Buffer> | null, callback?: Callback<Buffer> | Callback<string>): Promise<Buffer | string> | void {
   let done = callback as InternalCallback | undefined
-  let opts: Options = (options || {}) as Options
+  let opts: Readonly<Options> = (options || {}) as Options
 
   // light validation
   if (stream === undefined) {

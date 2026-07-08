@@ -10,6 +10,8 @@
   "license": "MIT",
   "repository": "stream-utils/raw-body",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": "./dist/index.js",
   "dependencies": {
     "bytes": "^3.1.2",

@@ -177,6 +177,29 @@ describe('Raw Body', function () {
     })
   }))
 
+  it('should work with null as options', withDone(function (done) {
+    getRawBody(createStream(), null, function (err, buf) {
+      assert.ifError(err)
+      checkBuffer(buf)
+      done()
+    })
+  }))
+
+  it('should work with null as options in promise style', function () {
+    return getRawBody(createStream(), null)
+      .then(checkBuffer)
+  })
+
+  it('should not mutate the options object', withDone(function (done) {
+    const options = Object.freeze({ length, limit: length + 1 })
+
+    getRawBody(createStream(), options, function (err, buf) {
+      assert.ifError(err)
+      checkBuffer(buf)
+      done()
+    })
+  }))
+
   it('should work if limit is null', withDone(function (done) {
     getRawBody(createStream(), {
       length,
