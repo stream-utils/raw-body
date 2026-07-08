@@ -118,4 +118,4 @@ Usage examples (Express, Koa, Hono, promises, and TypeScript) live in
 [downloads-image]: https://img.shields.io/npm/dm/raw-body.svg
 [downloads-url]: https://npmjs.org/package/raw-body
 [github-actions-ci-image]: https://img.shields.io/github/actions/workflow/status/stream-utils/raw-body/ci.yml?branch=master&label=ci
-[github-actions-ci-url]: https://github.com/jshttp/stream-utils/raw-body?query=workflow%3Aci
+[github-actions-ci-url]: https://github.com/stream-utils/raw-body/actions/workflows/ci.yml

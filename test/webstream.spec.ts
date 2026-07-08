@@ -238,6 +238,8 @@ describe('using web streams', function () {
 
   // Bun's Readable.toWeb does not surface premature-close errors from sockets
   it.skipIf(isBun)('should map aborts from Readable.toWeb request streams', withDone(function (done) {
+    let clientRequest: http.ClientRequest
+
     const server = http.createServer(function (req, res) {
       getRawBody(Readable.toWeb(req), {
         length: req.headers['content-length'],
@@ -253,19 +255,19 @@ describe('using web streams', function () {
         assert.ok(err.cause)
         done()
       })
+
+      setTimeout(function () { clientRequest.destroy() }, 10)
     })
 
     server.listen(0, function () {
-      const req = http.request({
+      clientRequest = http.request({
         port: (server.address() as net.AddressInfo).port,
         method: 'POST',
         headers: { 'content-length': '100' }
       })
 
-      req.on('error', function () {}) // socket hang up
-      req.write('partial')
-
-      setTimeout(function () { req.destroy() }, 20)
+      clientRequest.on('error', function () {}) // socket hang up
+      clientRequest.write('partial')
     })
   }))
 
