@@ -348,9 +348,7 @@ function halt (stream: NodeJS.ReadableStream): void {
   stream.unpipe()
 
   // pause stream
-  if (typeof stream.pause === 'function') {
-    stream.pause()
-  }
+  stream.pause()
 }
 
 /**
@@ -442,21 +440,24 @@ function readStream (stream: NodeJS.ReadableStream & { readableEncoding?: string
   function onData (chunk: Buffer | string): void {
     if (complete) return
 
+    // string chunks mean the stream is already decoded: the
+    // readableEncoding assertion covers real streams
+    if (typeof chunk === 'string') {
+      return done(encodingSetError())
+    }
+
     received += chunk.length
 
     if (limit !== null && received > limit) {
       done(entityTooLargeError({ limit, received }))
     } else if (decoder) {
-      // streams1 may emit string chunks
-      const buf = typeof chunk === 'string' ? Buffer.from(chunk) : chunk
-
       try {
-        buffer += decoder.write(buf)
+        buffer += decoder.write(chunk)
       } catch (err) {
         done(err as Error)
       }
     } else {
-      (buffer as Buffer[]).push(chunk as Buffer)
+      (buffer as Buffer[]).push(chunk)
     }
   }
 

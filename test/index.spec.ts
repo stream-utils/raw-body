@@ -348,13 +348,15 @@ describe('Raw Body', function () {
     done()
   }))
 
-  it('should error on streams1 string chunks without an encoding', withDone(function (done) {
-    const stream = new EventEmitter() as EventEmitter & { unpipe: () => void }
+  it('should error on string chunks without an encoding', withDone(function (done) {
+    const stream = new EventEmitter() as EventEmitter & { unpipe: () => void, pause: () => void }
     stream.unpipe = function () {}
+    stream.pause = function () {}
 
     getRawBody(stream as never, function (err) {
       assert.ok(err)
-      assert.strictEqual(err.code, 'ERR_INVALID_ARG_TYPE')
+      assert.strictEqual(err.status, 500)
+      assert.strictEqual(err.type, 'stream.encoding.set')
       done()
     })
 
@@ -362,9 +364,10 @@ describe('Raw Body', function () {
     stream.emit('end')
   }))
 
-  it('should halt the stream on error, even without pause', withDone(function (done) {
-    const stream = new EventEmitter() as EventEmitter & { unpipe: () => void }
+  it('should halt the stream on error', withDone(function (done) {
+    const stream = new EventEmitter() as EventEmitter & { unpipe: () => void, pause: () => void }
     stream.unpipe = function () {}
+    stream.pause = function () {}
 
     // keep the listeners attached, so late events reach the handlers
     stream.removeListener = function () { return this }
@@ -647,15 +650,20 @@ describe('Raw Body', function () {
     }))
   })
 
-  it('should work on streams1 stream', withDone(function (done) {
-    const stream = new EventEmitter()
+  it('should error on string chunks even with an encoding', withDone(function (done) {
+    // string chunks are already decoded, like the web path: decoding
+    // them again with the declared encoding would corrupt the data
+    const stream = new EventEmitter() as EventEmitter & { unpipe: () => void, pause: () => void }
+    stream.unpipe = function () {}
+    stream.pause = function () {}
 
     getRawBody(stream as never, {
       encoding: true,
       length: 19
-    }, function (err: Error | null | undefined, value: string) {
-      assert.ifError(err)
-      assert.strictEqual(value, 'foobar,foobaz,yay!!')
+    }, function (err) {
+      assert.ok(err)
+      assert.strictEqual(err.status, 500)
+      assert.strictEqual(err.type, 'stream.encoding.set')
       done()
     })
 
