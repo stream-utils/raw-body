@@ -39,6 +39,12 @@ jobs:
       - name: Run typecheck
         run: npm run typecheck
 
+      - name: Build
+        run: npm run build
+
+      - name: Check package size
+        run: npm run size
+
   test:
     strategy:
       fail-fast: false

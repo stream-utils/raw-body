@@ -18,6 +18,7 @@
     "http-errors": "^2.0.1"
   },
   "devDependencies": {
+    "@size-limit/preset-small-lib": "^12.1.0",
     "@types/bytes": "^3.1.5",
     "@types/http-errors": "^2.0.5",
     "@types/node": "^26.1.0",
@@ -25,12 +26,23 @@
     "eslint": "^9.0.0",
     "iconv-lite": "^0.7.0",
     "neostandard": "^0.13.0",
+    "size-limit": "^12.1.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=22"
   },
+  "size-limit": [
+    {
+      "path": "dist/index.js",
+      "limit": "4.5 KB",
+      "ignore": [
+        "node:async_hooks",
+        "node:stream"
+      ]
+    }
+  ],
   "files": [
     "LICENSE",
     "README.md",
@@ -42,6 +54,7 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "prepublishOnly": "npm run build",
+    "size": "size-limit",
     "test": "vitest run",
     "test:ci": "vitest run --coverage --coverage.reporter=lcovonly --coverage.reporter=text",
     "test:cov": "vitest run --coverage --coverage.reporter=html --coverage.reporter=text",
