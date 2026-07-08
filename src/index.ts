@@ -98,6 +98,22 @@ const isError: (err: unknown) => err is Error = typeof nativeIsError === 'functi
   : function (err: unknown): err is Error { return err instanceof Error }
 
 /**
+ * Check for the node readable stream interface.
+ */
+
+function isNodeReadable (stream: unknown): stream is NodeJS.ReadableStream {
+  return typeof (stream as NodeJS.ReadableStream).on === 'function'
+}
+
+/**
+ * Check for the web ReadableStream interface.
+ */
+
+function isWebReadable (stream: unknown): stream is ReadableStream<Uint8Array | string> {
+  return typeof (stream as ReadableStream).getReader === 'function'
+}
+
+/**
  * Get the decoder for a given encoding.
  */
 
@@ -232,8 +248,7 @@ function getRawBody (stream: RawBodyStream, options?: Options | Encoding | Callb
   if (stream === undefined) {
     throw new TypeError('argument stream is required')
   } else if (typeof stream !== 'object' || stream === null ||
-    (typeof (stream as NodeJS.ReadableStream).on !== 'function' &&
-      typeof (stream as ReadableStream).getReader !== 'function')) {
+    (!isNodeReadable(stream) && !isWebReadable(stream))) {
     throw new TypeError('argument stream must be a stream')
   }
 
@@ -265,27 +280,27 @@ function getRawBody (stream: RawBodyStream, options?: Options | Encoding | Callb
   }
 
   // convert the limit to an integer
-  const limit = bytes.parse(opts.limit as string | number)
+  const limit = opts.limit == null ? null : bytes.parse(opts.limit)
 
   // convert the expected length to an integer
-  const length = opts.length != null && !isNaN(opts.length as number)
-    ? parseInt(opts.length as string, 10)
+  const length = opts.length != null && !Number.isNaN(Number(opts.length))
+    ? parseInt(String(opts.length), 10)
     : null
 
   // select the reader for the stream type.
   // node streams take precedence, so objects exposing both
   // interfaces keep the historical duck-typed behavior
-  const read = typeof (stream as NodeJS.ReadableStream).on === 'function'
-    ? readStream
-    : readWebStream
+  const read = isNodeReadable(stream)
+    ? (callback: InternalCallback) => readStream(stream, encoding, length, limit, opts.decoder, callback)
+    : (callback: InternalCallback) => readWebStream(stream, encoding, length, limit, opts.decoder, callback)
 
   if (done) {
     // classic callback style
-    return read(stream as never, encoding, length, limit, opts.decoder, AsyncResource.bind(done, done.name || 'bound-anonymous-fn', null))
+    return read(AsyncResource.bind(done, done.name || 'bound-anonymous-fn', null))
   }
 
   return new Promise(function executor (resolve, reject) {
-    read(stream as never, encoding, length, limit, opts.decoder, function onRead (err, buf) {
+    read(function onRead (err, buf) {
       if (err) return reject(err)
       resolve(buf as Buffer | string)
     })
@@ -299,7 +314,7 @@ export { getRawBody, getRawBody as 'module.exports' }
  * Halt a stream.
  */
 
-function halt (stream: NodeJS.ReadableStream & { unpipe: () => void, pause?: () => void }): void {
+function halt (stream: NodeJS.ReadableStream): void {
   // unpipe everything from the stream
   stream.unpipe()
 
@@ -373,7 +388,7 @@ function readStream (stream: NodeJS.ReadableStream & { readableEncoding?: string
 
       if (args[0]) {
         // halt the stream on error
-        halt(stream as never)
+        halt(stream)
       }
 
       callback.apply(null, args)
