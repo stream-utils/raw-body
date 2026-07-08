@@ -1,6 +1,23 @@
 unreleased
 ==================
 
+  * Add support for WHATWG `ReadableStream` (web streams): `fetch`
+    `Request`/`Response` bodies, `Blob.stream()`, `TransformStream`
+    readables, and `Readable.toWeb()` bridges
+    - streams already locked, read, or cancelled error with a 500
+      `stream.not.readable`
+    - client aborts are mapped to the same 400 `request.aborted` error
+      as node streams, with the original error in `cause`
+    - string chunks are accepted without an encoding (UTF-8 `Buffer`);
+      combined with an encoding they error with a 500
+      `stream.encoding.set`, since the stream is already decoded
+    - non-byte chunks (e.g. `ArrayBuffer`) error with a `TypeError`
+    - on error the reader lock is released, but the stream is not
+      cancelled; disposing it is up to the caller
+  * Fix process crash when a custom `decoder` throws while reading
+    node streams
+  * Fix process crash on legacy streams1 emitting string chunks with
+    no encoding set; this now errors through the callback
   * deps: remove `unpipe` and use native `stream.unpipe()`
   * deps: remove `iconv-lite` and use native `TextDecoder`
     - Breaking Change: supported encodings are now those of the

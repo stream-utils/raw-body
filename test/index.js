@@ -176,10 +176,10 @@ describe('Raw Body', function () {
   })
 
   it('should handle length as string number', function (done) {
-    var testData = 'test'
-    var expectedLength = testData.length
+    const testData = 'test'
+    const expectedLength = testData.length
 
-    var stream = new Readable()
+    const stream = new Readable()
     stream.push(testData)
     stream.push(null)
 
@@ -234,6 +234,96 @@ describe('Raw Body', function () {
       assert.strictEqual(err.type, 'encoding.unsupported')
       done()
     })
+  })
+
+  it('should prefer the node stream interface when both are present', function (done) {
+    const stream = createStream(Buffer.from('hello, world!'))
+
+    // a wrapper library may decorate a node stream with a
+    // web-stream compatibility shim; the node path must win
+    stream.getReader = function () {
+      throw new Error('getReader should not be called')
+    }
+
+    getRawBody(stream, { encoding: true }, function (err, str) {
+      assert.ifError(err)
+      assert.strictEqual(str, 'hello, world!')
+      done()
+    })
+  })
+
+  it('should not invoke the callback synchronously on early errors', function (done) {
+    let returned = false
+
+    getRawBody(createStream(), {
+      length,
+      limit: length - 1
+    }, function (err) {
+      assert.strictEqual(returned, true)
+      assert.strictEqual(err.type, 'entity.too.large')
+      done()
+    })
+
+    returned = true
+  })
+
+  it('should not defer the callback once reading is asynchronous', function (done) {
+    const stream = new EventEmitter()
+    let callbackRan = false
+
+    getRawBody(stream, { length: 0, encoding: true }, function (err, str) {
+      callbackRan = true
+      assert.ifError(err)
+      assert.strictEqual(str, '')
+    })
+
+    stream.emit('end')
+
+    // the stream already ended, so the callback must not
+    // be deferred to a later tick
+    assert.strictEqual(callbackRan, true)
+    done()
+  })
+
+  it('should error on streams1 string chunks without an encoding', function (done) {
+    const stream = new EventEmitter()
+    stream.unpipe = function () {}
+
+    getRawBody(stream, function (err) {
+      assert.ok(err)
+      assert.strictEqual(err.code, 'ERR_INVALID_ARG_TYPE')
+      done()
+    })
+
+    stream.emit('data', 'hello')
+    stream.emit('end')
+  })
+
+  it('should halt the stream on error, even without pause', function (done) {
+    const stream = new EventEmitter()
+    stream.unpipe = function () {}
+
+    // keep the listeners attached, so late events reach the handlers
+    stream.removeListener = function () { return this }
+
+    let calls = 0
+
+    getRawBody(stream, { limit: 2 }, function (err) {
+      calls++
+      assert.strictEqual(calls, 1)
+      assert.strictEqual(err.status, 413)
+      assert.strictEqual(err.type, 'entity.too.large')
+
+      // late events after completion are ignored
+      stream.emit('data', Buffer.from('more'))
+      stream.emit('aborted')
+      stream.emit('end')
+      stream.emit('error', new Error('boom'))
+
+      done()
+    })
+
+    stream.emit('data', Buffer.from('hello'))
   })
 
   describe('as a promise', function () {
@@ -400,6 +490,38 @@ describe('Raw Body', function () {
         assert.throws(function () {
           getRawBody(createStream(), { encoding: 'utf-8', decoder: 'not a function' })
         }, /option decoder must be a function/)
+      })
+
+      it('should error when the decoder throws while writing', function (done) {
+        getRawBody(createStream(), {
+          encoding: 'utf-8',
+          decoder: function () {
+            return {
+              write () { throw new Error('decoder write failed') },
+              end () { return '' }
+            }
+          }
+        }, function (err) {
+          assert.ok(err)
+          assert.strictEqual(err.message, 'decoder write failed')
+          done()
+        })
+      })
+
+      it('should error when the decoder throws at the end', function (done) {
+        getRawBody(createStream(), {
+          encoding: 'utf-8',
+          decoder: function () {
+            return {
+              write (chunk) { return '' },
+              end () { throw new Error('decoder end failed') }
+            }
+          }
+        }, function (err) {
+          assert.ok(err)
+          assert.strictEqual(err.message, 'decoder end failed')
+          done()
+        })
       })
 
       it('should decode using the custom decoder', function (done) {

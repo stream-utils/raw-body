@@ -41,6 +41,10 @@ var getRawBody = require('raw-body')
 
 **Returns a promise if no callback specified.**
 
+The `stream` argument can be a Node.js readable stream (like an HTTP request)
+or a [WHATWG `ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream)
+(like the body of a `fetch` `Response`).
+
 Options:
 
 - `length` - The length of the stream.
@@ -62,7 +66,10 @@ Options:
   The returned decoder must implement `write(chunk)` and `end()`, both
   returning a string, which is the interface of
   [iconv-lite](https://www.npmjs.org/package/iconv-lite#readme)'s `getDecoder`,
-  so it can be passed directly to decode encodings outside the WHATWG standard:
+  so it can be passed directly to decode encodings outside the WHATWG standard.
+  The chunk is only valid during the `write(chunk)` call: a decoder that
+  keeps pending bytes across calls must copy them, as `TextDecoder` and
+  iconv-lite do — the underlying memory may be reused afterwards:
 
 <!-- eslint-disable no-undef -->
 
@@ -87,6 +94,10 @@ you want to keep the socket open for future requests. For streams
 that use file descriptors, you should `stream.destroy()` or
 `stream.close()` to prevent leaks.
 
+For web streams, any reader lock this module acquired is released both
+on success and on error, but the stream is never canceled, so on error
+you are responsible for disposing it, for example with `stream.cancel()`.
+
 ## Errors
 
 This module creates errors depending on the error condition during reading.
@@ -99,6 +110,8 @@ otherwise an error created by this module, which has the following attributes:
   * `encoding` - the invalid encoding
   * `status` and `statusCode` - the corresponding status code for the error
   * `type` - the error type
+  * `cause` - the underlying error, when the error wraps another one
+    (for example an aborted web stream)
 
 ### Types
 
@@ -129,11 +142,16 @@ emitted more bytes.
 
 This error will occur when the given stream has an encoding set on it, making it
 a decoded stream. The stream should not have an encoding set and is expected to
-emit `Buffer` objects.
+emit `Buffer` objects. For web streams, this occurs when the stream yields
+string chunks while an encoding is set — the stream is already decoded, so
+decoding it again would corrupt the data. (Without an encoding, string
+chunks are accepted and encoded as UTF-8 into the returned `Buffer`.)
 
 #### stream.not.readable
 
-This error will occur when the given stream is not readable.
+This error will occur when the given stream is not readable, or, for a web
+stream, when it is already locked to another reader, already read, or
+cancelled.
 
 ## Examples
 
