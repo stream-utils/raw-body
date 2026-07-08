@@ -236,6 +236,41 @@ describe('Raw Body', function () {
     })
   })
 
+  it('should validate the signal option', function () {
+    assert.throws(function () {
+      getRawBody(createStream(), { signal: 'nope' }, function () {})
+    }, /option signal must be an AbortSignal/)
+  })
+
+  it('should abort reading when the signal aborts', function (done) {
+    const controller = new AbortController()
+
+    // a stalled stream: only the signal can end this read
+    const stream = new Readable({ read () {} })
+    stream.push('partial')
+
+    getRawBody(stream, { signal: controller.signal }, function (err) {
+      assert.ok(err)
+      assert.strictEqual(err.status, 400)
+      assert.strictEqual(err.type, 'request.aborted')
+      assert.strictEqual(err.received, 7)
+      assert.strictEqual(err.cause, controller.signal.reason)
+      assert.ok(stream.isPaused())
+      done()
+    })
+
+    setTimeout(function () { controller.abort() }, 10)
+  })
+
+  it('should error immediately when the signal is already aborted', function (done) {
+    getRawBody(createStream(), { signal: AbortSignal.abort() }, function (err) {
+      assert.ok(err)
+      assert.strictEqual(err.status, 400)
+      assert.strictEqual(err.type, 'request.aborted')
+      done()
+    })
+  })
+
   it('should prefer the node stream interface when both are present', function (done) {
     const stream = createStream(Buffer.from('hello, world!'))
 

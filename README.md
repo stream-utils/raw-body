@@ -85,6 +85,12 @@ getRawBody(stream, {
   If the function throws, a `415` error is returned to signal the encoding is
   unsupported.
 
+- `signal` - An [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)
+  to abort reading the body, for example from `AbortSignal.timeout()` or an
+  `AbortController` tied to the request lifecycle. When the signal aborts,
+  reading stops and a `400` error with type `request.aborted` is returned,
+  carrying the signal's reason in `cause`.
+
 You can also pass a string in place of options to just specify the encoding.
 
 If an error occurs, the stream will be paused, everything unpiped,
@@ -131,7 +137,8 @@ an entity that is larger.
 #### request.aborted
 
 This error will occur when the request stream is aborted by the client before
-reading the body has finished.
+reading the body has finished, or when the `AbortSignal` passed via the
+`signal` option aborts.
 
 #### request.size.invalid
 

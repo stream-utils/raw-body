@@ -1,6 +1,9 @@
 unreleased
 ==================
 
+  * Add `signal` option to abort reading the body with an `AbortSignal`;
+    aborting produces a 400 `request.aborted` error with the signal's
+    reason in `cause`
   * Add support for WHATWG `ReadableStream` (web streams): `fetch`
     `Request`/`Response` bodies, `Blob.stream()`, `TransformStream`
     readables, and `Readable.toWeb()` bridges
@@ -28,7 +31,7 @@ unreleased
   * Add `decoder` option to plug in a custom decoder (e.g. `iconv-lite`'s
     `getDecoder`) for encodings outside the WHATWG Encoding Standard
   * Remove the check for a global `Promise` when no callback is provided
-  * Breaking Change: Node.js 18 is the minimum supported version
+  * Breaking Change: Node.js 18.9 is the minimum supported version
 
 3.0.2 / 2025-11-21
 ======================

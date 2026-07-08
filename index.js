@@ -223,6 +223,11 @@ function getRawBody (stream, options, callback) {
     throw new TypeError('option decoder must be a function')
   }
 
+  // validate signal is an AbortSignal, if provided
+  if (opts.signal !== undefined && !(opts.signal instanceof AbortSignal)) {
+    throw new TypeError('option signal must be an AbortSignal')
+  }
+
   // convert the limit to an integer
   const limit = bytes.parse(opts.limit)
 
@@ -240,11 +245,11 @@ function getRawBody (stream, options, callback) {
 
   if (done) {
     // classic callback style
-    return read(stream, encoding, length, limit, opts.decoder, AsyncResource.bind(done, done.name || 'bound-anonymous-fn', null))
+    return read(stream, encoding, length, limit, opts.decoder, opts.signal, AsyncResource.bind(done, done.name || 'bound-anonymous-fn', null))
   }
 
   return new Promise(function executor (resolve, reject) {
-    read(stream, encoding, length, limit, opts.decoder, function onRead (err, buf) {
+    read(stream, encoding, length, limit, opts.decoder, opts.signal, function onRead (err, buf) {
       if (err) return reject(err)
       resolve(buf)
     })
@@ -276,11 +281,12 @@ function halt (stream) {
  * @param {number} length
  * @param {number} limit
  * @param {function} createDecoder
+ * @param {AbortSignal} signal
  * @param {function} callback
  * @public
  */
 
-function readStream (stream, encoding, length, limit, createDecoder, callback) {
+function readStream (stream, encoding, length, limit, createDecoder, signal, callback) {
   let buffer
   let complete = false
   let sync = true
@@ -314,6 +320,14 @@ function readStream (stream, encoding, length, limit, createDecoder, callback) {
   buffer = decoder
     ? ''
     : []
+
+  if (signal) {
+    if (signal.aborted) {
+      return done(abortedError(length, received, signal.reason))
+    }
+
+    signal.addEventListener('abort', onSignalAbort, { once: true })
+  }
 
   // attach listeners
   stream.on('aborted', onAborted)
@@ -360,6 +374,12 @@ function readStream (stream, encoding, length, limit, createDecoder, callback) {
     done(abortedError(length, received))
   }
 
+  function onSignalAbort () {
+    // the listener is removed on completion, so this only
+    // fires while the read is still in progress
+    done(abortedError(length, received, signal.reason))
+  }
+
   function onData (chunk) {
     if (complete) return
 
@@ -390,6 +410,10 @@ function readStream (stream, encoding, length, limit, createDecoder, callback) {
 
   function cleanup () {
     buffer = null
+
+    if (signal) {
+      signal.removeEventListener('abort', onSignalAbort)
+    }
 
     stream.removeListener('aborted', onAborted)
     stream.removeListener('data', onData)
@@ -425,13 +449,15 @@ function toBuffer (chunk) {
  * @param {number} length
  * @param {number} limit
  * @param {function} createDecoder
+ * @param {AbortSignal} signal
  * @param {function} callback
  * @private
  */
 
-function readWebStream (stream, encoding, length, limit, createDecoder, callback) {
+function readWebStream (stream, encoding, length, limit, createDecoder, signal, callback) {
   let buffer
   let reader = null
+  let settled = false
 
   // check the length and limit options.
   // note: on error the reader lock is released but the stream is
@@ -458,6 +484,14 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
   buffer = decoder
     ? ''
     : []
+
+  if (signal) {
+    if (signal.aborted) {
+      return fail(abortedError(length, received, signal.reason))
+    }
+
+    signal.addEventListener('abort', onSignalAbort, { once: true })
+  }
 
   reader = stream.getReader()
 
@@ -486,16 +520,31 @@ function readWebStream (stream, encoding, length, limit, createDecoder, callback
     done(new Error('stream error', { cause: err }))
   }
 
+  function onSignalAbort () {
+    done(abortedError(length, received, signal.reason))
+  }
+
   function fail (err) {
     // defer, so the callback is never invoked synchronously
     process.nextTick(done, err)
   }
 
   function done (err, string) {
+    // a signal abort races the pending read's rejection after
+    // releaseLock: only the first settlement wins
+    if (settled) return
+    settled = true
+
+    if (signal) {
+      signal.removeEventListener('abort', onSignalAbort)
+    }
+
     buffer = null
 
     if (reader) {
-      // release the stream, so users can handle the rest themselves
+      // release the stream, so users can handle the rest
+      // themselves; a read in flight rejects, and the settled
+      // flag ignores it
       reader.releaseLock()
     }
 
