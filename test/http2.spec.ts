@@ -1,10 +1,12 @@
-const assert = require('assert')
-const getRawBody = require('..')
-const http2 = require('http2')
-const net = require('net')
+import assert from 'node:assert'
+import http2 from 'node:http2'
+import net from 'node:net'
+import { describe, it } from 'vitest'
+import getRawBody from '../src/index.ts'
+import { withDone } from './support/with-done.ts'
 
 describe('using http2 streams', function () {
-  it('should read from compatibility api', function (done) {
+  it('should read from compatibility api', withDone(function (done) {
     const server = http2.createServer(function onRequest (req, res) {
       getRawBody(req, { length: req.headers['content-length'] }, function (err, body) {
         if (err) {
@@ -18,7 +20,7 @@ describe('using http2 streams', function () {
     })
 
     server.listen(function onListen () {
-      const addr = server.address()
+      const addr = server.address() as net.AddressInfo
       const session = http2.connect('http://localhost:' + addr.port)
       const request = session.request({ ':method': 'POST', ':path': '/' })
 
@@ -35,12 +37,12 @@ describe('using http2 streams', function () {
         })
       })
     })
-  })
+  }))
 
-  it('should read body streams', function (done) {
+  it('should read body streams', withDone(function (done) {
     const server = http2.createServer()
 
-    server.on('stream', function onStream (stream, headers) {
+    server.on('stream', function onStream (stream: http2.ServerHttp2Stream, headers: http2.IncomingHttpHeaders) {
       getRawBody(stream, { length: headers['content-length'] }, function (err, body) {
         if (err) {
           stream.resume()
@@ -54,7 +56,7 @@ describe('using http2 streams', function () {
     })
 
     server.listen(function onListen () {
-      const addr = server.address()
+      const addr = server.address() as net.AddressInfo
       const session = http2.connect('http://localhost:' + addr.port)
       const request = session.request({ ':method': 'POST', ':path': '/' })
 
@@ -71,9 +73,9 @@ describe('using http2 streams', function () {
         })
       })
     })
-  })
+  }))
 
-  it('should throw if stream encoding is set', function (done) {
+  it('should throw if stream encoding is set', withDone(function (done) {
     const server = http2.createServer(function onRequest (req, res) {
       req.setEncoding('utf8')
       getRawBody(req, { length: req.headers['content-length'] }, function (err, body) {
@@ -88,7 +90,7 @@ describe('using http2 streams', function () {
     })
 
     server.listen(function onListen () {
-      const addr = server.address()
+      const addr = server.address() as net.AddressInfo
       const session = http2.connect('http://localhost:' + addr.port)
       const request = session.request({ ':method': 'POST', ':path': '/' })
 
@@ -105,15 +107,15 @@ describe('using http2 streams', function () {
         })
       })
     })
-  })
+  }))
 
-  it('should throw if connection ends', function (done) {
-    let socket
-    const server = http2.createServer(function onRequest (req, res) {
-      getRawBody(req, { length: req.headers['content-length'] }, function (err, body) {
+  it('should throw if connection ends', withDone(function (done) {
+    let socket: net.Socket
+    const server = http2.createServer(function onRequest (req) {
+      getRawBody(req, { length: req.headers['content-length'] }, function (err) {
         server.close()
         assert.ok(err)
-        assert.strictEqual(err.code, 'ECONNABORTED')
+        assert.strictEqual((err as NodeJS.ErrnoException).code, 'ECONNABORTED')
         assert.strictEqual(err.expected, 50)
         assert.strictEqual(err.message, 'request aborted')
         assert.strictEqual(err.received, 10)
@@ -126,10 +128,10 @@ describe('using http2 streams', function () {
     })
 
     server.listen(function onListen () {
-      const addr = server.address()
+      const addr = server.address() as net.AddressInfo
       const session = http2.connect('http://localhost:' + addr.port, {
-        createConnection: function (authority) {
-          return (socket = net.connect(authority.port, authority.hostname))
+        createConnection: function (authority: URL) {
+          return (socket = net.connect(Number(authority.port), authority.hostname))
         }
       })
 
@@ -141,21 +143,17 @@ describe('using http2 streams', function () {
 
       request.write('testing...')
     })
-  })
+  }))
 })
 
-function http2close (server, session, callback) {
-  if (typeof session.close === 'function') {
-    session.close(onSessionClose)
-  } else {
-    session.shutdown(onSessionClose)
-  }
+function http2close (server: http2.Http2Server, session: http2.ClientHttp2Session, callback: () => void): void {
+  session.close(onSessionClose)
 
-  function onServerClose () {
+  function onServerClose (): void {
     callback()
   }
 
-  function onSessionClose () {
+  function onSessionClose (): void {
     server.close(onServerClose)
   }
 }

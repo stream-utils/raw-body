@@ -1,47 +1,56 @@
-const assert = require('assert')
-const asyncHooks = require('async_hooks')
-const fs = require('fs')
-const getRawBody = require('..')
-const path = require('path')
-const EventEmitter = require('events').EventEmitter
-const Readable = require('stream').Readable
+import assert from 'node:assert'
+import { AsyncLocalStorage } from 'node:async_hooks'
+import { EventEmitter } from 'node:events'
+import fs from 'node:fs'
+import { Readable } from 'node:stream'
+import { fileURLToPath } from 'node:url'
+import iconv from 'iconv-lite'
+import { describe, it } from 'vitest'
+import getRawBody from '../src/index.ts'
+import { withDone } from './support/with-done.ts'
 
-const file = path.join(__dirname, 'index.js')
+const file = fileURLToPath(import.meta.url)
 const length = fs.statSync(file).size
 const string = fs.readFileSync(file, 'utf8')
 
 describe('Raw Body', function () {
   it('should validate stream', function () {
+    // @ts-expect-error missing stream argument
     assert.throws(function () { getRawBody() }, /argument stream is required/)
+    // @ts-expect-error invalid stream argument
     assert.throws(function () { getRawBody(null) }, /argument stream must be a stream/)
+    // @ts-expect-error invalid stream argument
     assert.throws(function () { getRawBody(42) }, /argument stream must be a stream/)
+    // @ts-expect-error invalid stream argument
     assert.throws(function () { getRawBody('str') }, /argument stream must be a stream/)
+    // @ts-expect-error invalid stream argument
     assert.throws(function () { getRawBody({}) }, /argument stream must be a stream/)
   })
 
-  it('should work without any options', function (done) {
+  it('should work without any options', withDone(function (done) {
     getRawBody(createStream(), function (err, buf) {
       assert.ifError(err)
       checkBuffer(buf)
       done()
     })
-  })
+  }))
 
-  it('should work with `true` as an option', function (done) {
+  it('should work with `true` as an option', withDone(function (done) {
     getRawBody(createStream(), true, function (err, buf) {
       assert.ifError(err)
       assert.strictEqual(typeof buf, 'string')
       done()
     })
-  })
+  }))
 
   it('should error for bad callback', function () {
     assert.throws(function () {
+      // @ts-expect-error invalid callback argument
       getRawBody(createStream(), true, 'silly')
     }, /argument callback.*function/)
   })
 
-  it('should work with length', function (done) {
+  it('should work with length', withDone(function (done) {
     getRawBody(createStream(), {
       length
     }, function (err, buf) {
@@ -49,15 +58,15 @@ describe('Raw Body', function () {
       checkBuffer(buf)
       done()
     })
-  })
+  }))
 
-  it('should work when length=0', function (done) {
+  it('should work when length=0', withDone(function (done) {
     const stream = new EventEmitter()
 
-    getRawBody(stream, {
+    getRawBody(stream as never, {
       length: 0,
       encoding: true
-    }, function (err, str) {
+    }, function (err: Error | null | undefined, str: string) {
       assert.ifError(err)
       assert.strictEqual(str, '')
       done()
@@ -66,9 +75,9 @@ describe('Raw Body', function () {
     process.nextTick(function () {
       stream.emit('end')
     })
-  })
+  }))
 
-  it('should work with limit', function (done) {
+  it('should work with limit', withDone(function (done) {
     getRawBody(createStream(), {
       limit: length + 1
     }, function (err, buf) {
@@ -76,9 +85,9 @@ describe('Raw Body', function () {
       checkBuffer(buf)
       done()
     })
-  })
+  }))
 
-  it('should work with limit as a string', function (done) {
+  it('should work with limit as a string', withDone(function (done) {
     getRawBody(createStream(), {
       limit: '1gb'
     }, function (err, buf) {
@@ -86,9 +95,9 @@ describe('Raw Body', function () {
       checkBuffer(buf)
       done()
     })
-  })
+  }))
 
-  it('should work with limit and length', function (done) {
+  it('should work with limit and length', withDone(function (done) {
     getRawBody(createStream(), {
       length,
       limit: length + 1
@@ -97,13 +106,13 @@ describe('Raw Body', function () {
       checkBuffer(buf)
       done()
     })
-  })
+  }))
 
-  it('should check options for limit and length', function (done) {
+  it('should check options for limit and length', withDone(function (done) {
     getRawBody(createStream(), {
       length,
       limit: length - 1
-    }, function (err, buf) {
+    }, function (err) {
       assert.strictEqual(err.status, 413)
       assert.strictEqual(err.statusCode, 413)
       assert.strictEqual(err.expected, length)
@@ -113,9 +122,9 @@ describe('Raw Body', function () {
       assert.strictEqual(err.message, 'request entity too large')
       done()
     })
-  })
+  }))
 
-  it('should work with an empty stream', function (done) {
+  it('should work with an empty stream', withDone(function (done) {
     const stream = new Readable()
     stream.push(null)
 
@@ -129,42 +138,42 @@ describe('Raw Body', function () {
     })
 
     stream.emit('end')
-  })
+  }))
 
-  it('should throw on empty string and incorrect length', function (done) {
+  it('should throw on empty string and incorrect length', withDone(function (done) {
     const stream = new Readable()
     stream.push(null)
 
     getRawBody(stream, {
       length: 1,
       limit: 2
-    }, function (err, buf) {
+    }, function (err) {
       assert.strictEqual(err.status, 400)
       done()
     })
 
     stream.emit('end')
-  })
+  }))
 
-  it('should throw if length > limit', function (done) {
+  it('should throw if length > limit', withDone(function (done) {
     getRawBody(createStream(), {
       limit: length - 1
-    }, function (err, buf) {
+    }, function (err) {
       assert.strictEqual(err.status, 413)
       done()
     })
-  })
+  }))
 
-  it('should throw if incorrect length supplied', function (done) {
+  it('should throw if incorrect length supplied', withDone(function (done) {
     getRawBody(createStream(), {
       length: length - 1
-    }, function (err, buf) {
+    }, function (err) {
       assert.strictEqual(err.status, 400)
       done()
     })
-  })
+  }))
 
-  it('should work with if length is null', function (done) {
+  it('should work with if length is null', withDone(function (done) {
     getRawBody(createStream(), {
       length: null,
       limit: length + 1
@@ -173,9 +182,9 @@ describe('Raw Body', function () {
       checkBuffer(buf)
       done()
     })
-  })
+  }))
 
-  it('should handle length as string number', function (done) {
+  it('should handle length as string number', withDone(function (done) {
     const testData = 'test'
     const expectedLength = testData.length
 
@@ -191,9 +200,9 @@ describe('Raw Body', function () {
       assert.strictEqual(buf.length, expectedLength)
       done()
     })
-  })
+  }))
 
-  it('should work with {"test":"å"}', function (done) {
+  it('should work with {"test":"å"}', withDone(function (done) {
     // https://github.com/visionmedia/express/issues/1816
 
     const stream = new Readable()
@@ -208,21 +217,21 @@ describe('Raw Body', function () {
       assert.strictEqual(buf.length, 13)
       done()
     })
-  })
+  }))
 
-  it('should throw if stream encoding is set', function (done) {
+  it('should throw if stream encoding is set', withDone(function (done) {
     const stream = new Readable()
     stream.push('akl;sdjfklajsdfkljasdf')
     stream.push(null)
     stream.setEncoding('utf8')
 
-    getRawBody(stream, function (err, buf) {
+    getRawBody(stream, function (err) {
       assert.strictEqual(err.status, 500)
       done()
     })
-  })
+  }))
 
-  it('should throw when given an invalid encoding', function (done) {
+  it('should throw when given an invalid encoding', withDone(function (done) {
     const stream = new Readable()
     stream.push('akl;sdjfklajsdfkljasdf')
     stream.push(null)
@@ -234,10 +243,10 @@ describe('Raw Body', function () {
       assert.strictEqual(err.type, 'encoding.unsupported')
       done()
     })
-  })
+  }))
 
-  it('should prefer the node stream interface when both are present', function (done) {
-    const stream = createStream(Buffer.from('hello, world!'))
+  it('should prefer the node stream interface when both are present', withDone(function (done) {
+    const stream = createStream(Buffer.from('hello, world!')) as Readable & { getReader?: () => never }
 
     // a wrapper library may decorate a node stream with a
     // web-stream compatibility shim; the node path must win
@@ -250,9 +259,9 @@ describe('Raw Body', function () {
       assert.strictEqual(str, 'hello, world!')
       done()
     })
-  })
+  }))
 
-  it('should not invoke the callback synchronously on early errors', function (done) {
+  it('should not invoke the callback synchronously on early errors', withDone(function (done) {
     let returned = false
 
     getRawBody(createStream(), {
@@ -265,13 +274,13 @@ describe('Raw Body', function () {
     })
 
     returned = true
-  })
+  }))
 
-  it('should not defer the callback once reading is asynchronous', function (done) {
+  it('should not defer the callback once reading is asynchronous', withDone(function (done) {
     const stream = new EventEmitter()
     let callbackRan = false
 
-    getRawBody(stream, { length: 0, encoding: true }, function (err, str) {
+    getRawBody(stream as never, { length: 0, encoding: true }, function (err: Error | null | undefined, str: string) {
       callbackRan = true
       assert.ifError(err)
       assert.strictEqual(str, '')
@@ -283,13 +292,13 @@ describe('Raw Body', function () {
     // be deferred to a later tick
     assert.strictEqual(callbackRan, true)
     done()
-  })
+  }))
 
-  it('should error on streams1 string chunks without an encoding', function (done) {
-    const stream = new EventEmitter()
+  it('should error on streams1 string chunks without an encoding', withDone(function (done) {
+    const stream = new EventEmitter() as EventEmitter & { unpipe: () => void }
     stream.unpipe = function () {}
 
-    getRawBody(stream, function (err) {
+    getRawBody(stream as never, function (err: NodeJS.ErrnoException) {
       assert.ok(err)
       assert.strictEqual(err.code, 'ERR_INVALID_ARG_TYPE')
       done()
@@ -297,10 +306,10 @@ describe('Raw Body', function () {
 
     stream.emit('data', 'hello')
     stream.emit('end')
-  })
+  }))
 
-  it('should halt the stream on error, even without pause', function (done) {
-    const stream = new EventEmitter()
+  it('should halt the stream on error, even without pause', withDone(function (done) {
+    const stream = new EventEmitter() as EventEmitter & { unpipe: () => void }
     stream.unpipe = function () {}
 
     // keep the listeners attached, so late events reach the handlers
@@ -308,7 +317,7 @@ describe('Raw Body', function () {
 
     let calls = 0
 
-    getRawBody(stream, { limit: 2 }, function (err) {
+    getRawBody(stream as never, { limit: 2 }, function (err: { status: number, type: string }) {
       calls++
       assert.strictEqual(calls, 1)
       assert.strictEqual(err.status, 413)
@@ -324,7 +333,7 @@ describe('Raw Body', function () {
     })
 
     stream.emit('data', Buffer.from('hello'))
-  })
+  }))
 
   describe('as a promise', function () {
     it('should work as a promise', function () {
@@ -343,26 +352,26 @@ describe('Raw Body', function () {
   })
 
   describe('with a callback', function () {
-    it('should work with callback as second argument', function (done) {
+    it('should work with callback as second argument', withDone(function (done) {
       getRawBody(createStream(), function (err, buf) {
         assert.ifError(err)
         checkBuffer(buf)
         done()
       })
-    })
+    }))
 
-    it('should work with callback as third argument', function (done) {
+    it('should work with callback as third argument', withDone(function (done) {
       getRawBody(createStream(), true, function (err, str) {
         assert.ifError(err)
         checkString(str)
         done()
       })
-    })
+    }))
   })
 
   describe('with async local storage', function () {
-    it('should presist store in callback', function (done) {
-      const asyncLocalStorage = new asyncHooks.AsyncLocalStorage()
+    it('should presist store in callback', withDone(function (done) {
+      const asyncLocalStorage = new AsyncLocalStorage<{ foo: string }>()
       const store = { foo: 'bar' }
       const stream = createStream()
 
@@ -370,29 +379,29 @@ describe('Raw Body', function () {
         getRawBody(stream, function (err, buf) {
           if (err) return done(err)
           assert.ok(buf.length > 0)
-          assert.strictEqual(asyncLocalStorage.getStore().foo, 'bar')
+          assert.strictEqual(asyncLocalStorage.getStore()!.foo, 'bar')
           done()
         })
       })
-    })
+    }))
 
-    it('should presist store in promise', function (done) {
-      const asyncLocalStorage = new asyncHooks.AsyncLocalStorage()
+    it('should presist store in promise', withDone(function (done) {
+      const asyncLocalStorage = new AsyncLocalStorage<{ foo: string }>()
       const store = { foo: 'bar' }
       const stream = createStream()
 
       asyncLocalStorage.run(store, function () {
         getRawBody(stream).then(function (buf) {
           assert.ok(buf.length > 0)
-          assert.strictEqual(asyncLocalStorage.getStore().foo, 'bar')
+          assert.strictEqual(asyncLocalStorage.getStore()!.foo, 'bar')
           done()
         }, done)
       })
-    })
+    }))
   })
 
   describe('when an encoding is set', function () {
-    it('should return a string', function (done) {
+    it('should return a string', withDone(function (done) {
       getRawBody(createStream(), {
         encoding: 'utf-8'
       }, function (err, str) {
@@ -400,9 +409,9 @@ describe('Raw Body', function () {
         assert.strictEqual(str, string)
         done()
       })
-    })
+    }))
 
-    it('should handle encoding true as utf-8', function (done) {
+    it('should handle encoding true as utf-8', withDone(function (done) {
       getRawBody(createStream(), {
         encoding: true
       }, function (err, str) {
@@ -410,17 +419,17 @@ describe('Raw Body', function () {
         assert.strictEqual(str, string)
         done()
       })
-    })
+    }))
 
-    it('should handle encoding as options string', function (done) {
+    it('should handle encoding as options string', withDone(function (done) {
       getRawBody(createStream(), 'utf-8', function (err, str) {
         assert.ifError(err)
         assert.strictEqual(str, string)
         done()
       })
-    })
+    }))
 
-    it('should decode codepage string', function (done) {
+    it('should decode codepage string', withDone(function (done) {
       const stream = createStream(Buffer.from('bf43f36d6f20657374e1733f', 'hex'))
       const string = '¿Cómo estás?'
       getRawBody(stream, 'iso-8859-1', function (err, str) {
@@ -428,9 +437,9 @@ describe('Raw Body', function () {
         assert.strictEqual(str, string)
         done()
       })
-    })
+    }))
 
-    it('should decode UTF-8 string', function (done) {
+    it('should decode UTF-8 string', withDone(function (done) {
       const stream = createStream(Buffer.from('c2bf43c3b36d6f20657374c3a1733f', 'hex'))
       const string = '¿Cómo estás?'
       getRawBody(stream, 'utf-8', function (err, str) {
@@ -438,9 +447,9 @@ describe('Raw Body', function () {
         assert.strictEqual(str, string)
         done()
       })
-    })
+    }))
 
-    it('should decode UTF-16 string (LE BOM)', function (done) {
+    it('should decode UTF-16 string (LE BOM)', withDone(function (done) {
       // BOM makes this LE
       const stream = createStream(Buffer.from('fffebf004300f3006d006f002000650073007400e10073003f00', 'hex'))
       const string = '¿Cómo estás?'
@@ -449,9 +458,9 @@ describe('Raw Body', function () {
         assert.strictEqual(str, string)
         done()
       })
-    })
+    }))
 
-    it('should decode UTF-16BE string (BE BOM)', function (done) {
+    it('should decode UTF-16BE string (BE BOM)', withDone(function (done) {
       const stream = createStream(Buffer.from('feff00bf004300f3006d006f002000650073007400e10073003f', 'hex'))
       const string = '¿Cómo estás?'
       getRawBody(stream, 'utf-16be', function (err, str) {
@@ -459,9 +468,9 @@ describe('Raw Body', function () {
         assert.strictEqual(str, string)
         done()
       })
-    })
+    }))
 
-    it('should decode UTF-16LE string', function (done) {
+    it('should decode UTF-16LE string', withDone(function (done) {
       // UTF-16LE is different from UTF-16 due to BOM behavior
       const stream = createStream(Buffer.from('bf004300f3006d006f002000650073007400e10073003f00', 'hex'))
       const string = '¿Cómo estás?'
@@ -470,9 +479,9 @@ describe('Raw Body', function () {
         assert.strictEqual(str, string)
         done()
       })
-    })
+    }))
 
-    it('should reject UTF-32 as unsupported', function (done) {
+    it('should reject UTF-32 as unsupported', withDone(function (done) {
       // UTF-32 is not part of the WHATWG Encoding Standard
       const stream = createStream(Buffer.from('fffe0000bf00000043000000f30000006d0000006f00000020000000650000007300000074000000e1000000730000003f000000', 'hex'))
       getRawBody(stream, 'utf-32', function (err) {
@@ -481,18 +490,17 @@ describe('Raw Body', function () {
         assert.strictEqual(err.type, 'encoding.unsupported')
         done()
       })
-    })
+    }))
 
     describe('with a custom decoder', function () {
-      const iconv = require('iconv-lite')
-
       it('should validate the decoder option', function () {
         assert.throws(function () {
+          // @ts-expect-error invalid decoder option
           getRawBody(createStream(), { encoding: 'utf-8', decoder: 'not a function' })
         }, /option decoder must be a function/)
       })
 
-      it('should error when the decoder throws while writing', function (done) {
+      it('should error when the decoder throws while writing', withDone(function (done) {
         getRawBody(createStream(), {
           encoding: 'utf-8',
           decoder: function () {
@@ -506,14 +514,14 @@ describe('Raw Body', function () {
           assert.strictEqual(err.message, 'decoder write failed')
           done()
         })
-      })
+      }))
 
-      it('should error when the decoder throws at the end', function (done) {
+      it('should error when the decoder throws at the end', withDone(function (done) {
         getRawBody(createStream(), {
           encoding: 'utf-8',
           decoder: function () {
             return {
-              write (chunk) { return '' },
+              write () { return '' },
               end () { throw new Error('decoder end failed') }
             }
           }
@@ -522,9 +530,9 @@ describe('Raw Body', function () {
           assert.strictEqual(err.message, 'decoder end failed')
           done()
         })
-      })
+      }))
 
-      it('should decode using the custom decoder', function (done) {
+      it('should decode using the custom decoder', withDone(function (done) {
         const stream = createStream(Buffer.from('bf43f36d6f20657374e1733f', 'hex'))
         const string = '¿Cómo estás?'
         getRawBody(stream, {
@@ -535,9 +543,9 @@ describe('Raw Body', function () {
           assert.strictEqual(str, string)
           done()
         })
-      })
+      }))
 
-      it('should decode encodings unsupported by TextDecoder', function (done) {
+      it('should decode encodings unsupported by TextDecoder', withDone(function (done) {
         const string = '¿Cómo estás?'
         const stream = createStream(iconv.encode(string, 'utf-32le'))
         getRawBody(stream, {
@@ -548,9 +556,9 @@ describe('Raw Body', function () {
           assert.strictEqual(str, string)
           done()
         })
-      })
+      }))
 
-      it('should reject encodings the custom decoder does not support', function (done) {
+      it('should reject encodings the custom decoder does not support', withDone(function (done) {
         const stream = createStream()
         getRawBody(stream, {
           encoding: 'akljsdflkajsdf',
@@ -561,26 +569,26 @@ describe('Raw Body', function () {
           assert.strictEqual(err.type, 'encoding.unsupported')
           done()
         })
-      })
+      }))
     })
 
-    it('should correctly calculate the expected length', function (done) {
+    it('should correctly calculate the expected length', withDone(function (done) {
       const stream = createStream(Buffer.from('{"test":"å"}'))
 
       getRawBody(stream, {
         encoding: 'utf-8',
         length: 13
       }, done)
-    })
+    }))
   })
 
-  it('should work on streams1 stream', function (done) {
+  it('should work on streams1 stream', withDone(function (done) {
     const stream = new EventEmitter()
 
-    getRawBody(stream, {
+    getRawBody(stream as never, {
       encoding: true,
       length: 19
-    }, function (err, value) {
+    }, function (err: Error | null | undefined, value: string) {
       assert.ifError(err)
       assert.strictEqual(value, 'foobar,foobaz,yay!!')
       done()
@@ -592,21 +600,21 @@ describe('Raw Body', function () {
       stream.emit('data', 'yay!!')
       stream.emit('end')
     })
-  })
+  }))
 })
 
-function checkBuffer (buf) {
+function checkBuffer (buf: Buffer): void {
   assert.ok(Buffer.isBuffer(buf))
   assert.strictEqual(buf.length, length)
   assert.strictEqual(buf.toString('utf8'), string)
 }
 
-function checkString (str) {
+function checkString (str: string): void {
   assert.ok(typeof str === 'string')
   assert.strictEqual(str, string)
 }
 
-function createStream (buf) {
+function createStream (buf?: Buffer): Readable {
   if (!buf) return fs.createReadStream(file)
 
   const stream = new Readable()
@@ -618,6 +626,6 @@ function createStream (buf) {
   return stream
 }
 
-function throwExpectedError () {
+function throwExpectedError (): never {
   throw new Error('expected error')
 }

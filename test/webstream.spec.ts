@@ -1,8 +1,12 @@
-const assert = require('assert')
-const getRawBody = require('..')
-const http = require('http')
-const net = require('net')
-const { Readable } = require('stream')
+import assert from 'node:assert'
+import http from 'node:http'
+import net from 'node:net'
+import { Readable } from 'node:stream'
+import type { ReadableWritablePair } from 'node:stream/web'
+import iconv from 'iconv-lite'
+import { describe, it } from 'vitest'
+import getRawBody, { type RawBodyError } from '../src/index.ts'
+import { withDone } from './support/with-done.ts'
 
 describe('using web streams', function () {
   it('should read a ReadableStream into a buffer', async function () {
@@ -51,7 +55,7 @@ describe('using web streams', function () {
     // re-decoding it with the declared encoding would corrupt the data
     const stream = createWebStream(['hello, world!'], { binary: false })
 
-    await assert.rejects(getRawBody(stream, { encoding: 'utf-16le' }), function (err) {
+    await assert.rejects(getRawBody(stream, { encoding: 'utf-16le' }), function (err: RawBodyError) {
       assert.strictEqual(err.status, 500)
       assert.strictEqual(err.type, 'stream.encoding.set')
       return true
@@ -61,7 +65,6 @@ describe('using web streams', function () {
   })
 
   it('should work with a custom decoder', async function () {
-    const iconv = require('iconv-lite')
     const str = await getRawBody(createWebStream([Buffer.from('636f6f6c20f09f9880', 'hex')]), {
       encoding: 'utf-8',
       decoder: iconv.getDecoder.bind(iconv)
@@ -70,7 +73,6 @@ describe('using web streams', function () {
   })
 
   it('should decode encodings unsupported by TextDecoder', async function () {
-    const iconv = require('iconv-lite')
     const bytes = iconv.encode('¿Cómo estás?', 'utf-32le')
 
     // split mid-character: each utf-32 code unit is 4 bytes,
@@ -86,13 +88,13 @@ describe('using web streams', function () {
     assert.strictEqual(str, '¿Cómo estás?')
   })
 
-  it('should work with the callback style', function (done) {
+  it('should work with the callback style', withDone(function (done) {
     getRawBody(createWebStream(['hello, world!']), function (err, buf) {
       assert.ifError(err)
       assert.strictEqual(buf.toString(), 'hello, world!')
       done()
     })
-  })
+  }))
 
   it('should check length', async function () {
     const buf = await getRawBody(createWebStream(['hello, world!']), {
@@ -104,7 +106,7 @@ describe('using web streams', function () {
   it('should error with length mismatch', async function () {
     await assert.rejects(getRawBody(createWebStream(['hello, world!']), {
       length: 10
-    }), function (err) {
+    }), function (err: RawBodyError) {
       assert.strictEqual(err.status, 400)
       assert.strictEqual(err.type, 'request.size.invalid')
       assert.strictEqual(err.expected, 10)
@@ -116,7 +118,7 @@ describe('using web streams', function () {
   it('should error when limit is exceeded', async function () {
     await assert.rejects(getRawBody(createWebStream(['hello, world!']), {
       limit: 5
-    }), function (err) {
+    }), function (err: RawBodyError) {
       assert.strictEqual(err.status, 413)
       assert.strictEqual(err.type, 'entity.too.large')
       assert.strictEqual(err.limit, 5)
@@ -130,7 +132,7 @@ describe('using web streams', function () {
     await assert.rejects(getRawBody(stream, {
       length: 13,
       limit: 5
-    }), function (err) {
+    }), function (err: RawBodyError) {
       assert.strictEqual(err.status, 413)
       assert.strictEqual(err.type, 'entity.too.large')
       return true
@@ -143,7 +145,7 @@ describe('using web streams', function () {
   it('should error for an unsupported encoding', async function () {
     await assert.rejects(getRawBody(createWebStream(['hello, world!']), {
       encoding: 'foo/bar'
-    }), function (err) {
+    }), function (err: RawBodyError) {
       assert.strictEqual(err.status, 415)
       assert.strictEqual(err.type, 'encoding.unsupported')
       return true
@@ -154,7 +156,7 @@ describe('using web streams', function () {
     const stream = createWebStream(['hello, world!'])
     const reader = stream.getReader()
 
-    await assert.rejects(getRawBody(stream), function (err) {
+    await assert.rejects(getRawBody(stream), function (err: RawBodyError) {
       assert.strictEqual(err.status, 500)
       assert.strictEqual(err.type, 'stream.not.readable')
       return true
@@ -167,7 +169,7 @@ describe('using web streams', function () {
     const res = new Response('hello, world!')
     await res.text()
 
-    await assert.rejects(getRawBody(res.body), function (err) {
+    await assert.rejects(getRawBody(res.body!), function (err: RawBodyError) {
       assert.strictEqual(err.status, 500)
       assert.strictEqual(err.type, 'stream.not.readable')
       return true
@@ -176,9 +178,9 @@ describe('using web streams', function () {
 
   it('should error when the stream is locked by a pipe', async function () {
     const stream = createWebStream(['hello, world!'])
-    const piped = stream.pipeThrough(new TextDecoderStream())
+    const piped = stream.pipeThrough(new TextDecoderStream() as ReadableWritablePair<string, Uint8Array | string>)
 
-    await assert.rejects(getRawBody(stream), function (err) {
+    await assert.rejects(getRawBody(stream), function (err: RawBodyError) {
       assert.strictEqual(err.status, 500)
       assert.strictEqual(err.type, 'stream.not.readable')
       return true
@@ -191,7 +193,7 @@ describe('using web streams', function () {
     const stream = createWebStream(['hello, world!'])
     await stream.cancel()
 
-    await assert.rejects(getRawBody(stream), function (err) {
+    await assert.rejects(getRawBody(stream), function (err: RawBodyError) {
       assert.strictEqual(err.status, 500)
       assert.strictEqual(err.type, 'stream.not.readable')
       return true
@@ -204,7 +206,7 @@ describe('using web streams', function () {
     while (!(await reader.read()).done);
     reader.releaseLock()
 
-    await assert.rejects(getRawBody(stream), function (err) {
+    await assert.rejects(getRawBody(stream), function (err: RawBodyError) {
       assert.strictEqual(err.status, 500)
       assert.strictEqual(err.type, 'stream.not.readable')
       return true
@@ -215,7 +217,7 @@ describe('using web streams', function () {
     // deliver one chunk, then abort: erroring in start() would
     // discard the queued chunk, so error on the second pull
     let pulls = 0
-    const stream = new ReadableStream({
+    const stream = new ReadableStream<Uint8Array>({
       pull (controller) {
         if (pulls++ === 0) {
           controller.enqueue(new TextEncoder().encode('hel'))
@@ -225,7 +227,7 @@ describe('using web streams', function () {
       }
     })
 
-    await assert.rejects(getRawBody(stream, { length: 10 }), function (err) {
+    await assert.rejects(getRawBody(stream, { length: 10 }), function (err: RawBodyError & { code?: string }) {
       assert.strictEqual(err.status, 400)
       assert.strictEqual(err.type, 'request.aborted')
       assert.strictEqual(err.code, 'ECONNABORTED')
@@ -235,7 +237,7 @@ describe('using web streams', function () {
     })
   })
 
-  it('should map aborts from Readable.toWeb request streams', function (done) {
+  it('should map aborts from Readable.toWeb request streams', withDone(function (done) {
     const server = http.createServer(function (req, res) {
       getRawBody(Readable.toWeb(req), {
         length: req.headers['content-length'],
@@ -247,7 +249,7 @@ describe('using web streams', function () {
         assert.ok(err)
         assert.strictEqual(err.status, 400)
         assert.strictEqual(err.type, 'request.aborted')
-        assert.strictEqual(err.code, 'ECONNABORTED')
+        assert.strictEqual((err as RawBodyError & { code?: string }).code, 'ECONNABORTED')
         assert.ok(err.cause)
         done()
       })
@@ -255,7 +257,7 @@ describe('using web streams', function () {
 
     server.listen(0, function () {
       const req = http.request({
-        port: server.address().port,
+        port: (server.address() as net.AddressInfo).port,
         method: 'POST',
         headers: { 'content-length': '100' }
       })
@@ -265,32 +267,32 @@ describe('using web streams', function () {
 
       setTimeout(function () { req.destroy() }, 20)
     })
-  })
+  }))
 
-  it('should pass through a live socket reset unmapped', function (done) {
+  it('should pass through a live socket reset unmapped', withDone(function (done) {
     const server = net.createServer(function (socket) {
       socket.write('partial')
       setTimeout(function () { socket.resetAndDestroy() }, 10)
     })
 
     server.listen(0, function () {
-      const socket = net.connect(server.address().port)
+      const socket = net.connect((server.address() as net.AddressInfo).port)
 
       socket.on('connect', function () {
         getRawBody(Readable.toWeb(socket), function (err) {
           server.close()
 
           assert.ok(err)
-          assert.strictEqual(err.code, 'ECONNRESET')
+          assert.strictEqual((err as RawBodyError & { code?: string }).code, 'ECONNRESET')
           assert.strictEqual(err.message, 'read ECONNRESET')
           assert.notStrictEqual(err.type, 'request.aborted')
           done()
         })
       })
     })
-  })
+  }))
 
-  it('should map destroyed Readable.toWeb streams to request.aborted', function (done) {
+  it('should map destroyed Readable.toWeb streams to request.aborted', withDone(function (done) {
     const nodeStream = new Readable({ read () {} })
     const webStream = Readable.toWeb(nodeStream)
 
@@ -304,10 +306,10 @@ describe('using web streams', function () {
 
     nodeStream.push(Buffer.from('partial'))
     setTimeout(function () { nodeStream.destroy() }, 10)
-  })
+  }))
 
   it('should propagate stream errors', async function () {
-    const stream = new ReadableStream({
+    const stream = new ReadableStream<Uint8Array>({
       start (controller) {
         controller.enqueue(new TextEncoder().encode('hello'))
         controller.error(new Error('boom'))
@@ -342,7 +344,7 @@ describe('using web streams', function () {
       encoding: 'utf-8',
       decoder: function () {
         return {
-          write (chunk) { return '' },
+          write () { return '' },
           end () { throw new Error('decoder end failed') }
         }
       }
@@ -354,13 +356,13 @@ describe('using web streams', function () {
   it('should normalize non-Error stream failures', async function () {
     // e.g. controller.error('timeout') or abort(reason) with a
     // string: callers must always receive an Error instance
-    const stream = new ReadableStream({
+    const stream = new ReadableStream<Uint8Array>({
       start (controller) {
         controller.error('timeout')
       }
     })
 
-    await assert.rejects(getRawBody(stream), function (err) {
+    await assert.rejects(getRawBody(stream), function (err: Error) {
       assert.ok(err instanceof Error)
       assert.strictEqual(err.message, 'stream error')
       assert.strictEqual(err.cause, 'timeout')
@@ -369,7 +371,7 @@ describe('using web streams', function () {
   })
 
   it('should reject when the stream errors without a reason', async function () {
-    const stream = new ReadableStream({
+    const stream = new ReadableStream<Uint8Array>({
       start (controller) {
         controller.error()
       }
@@ -414,7 +416,7 @@ describe('using web streams', function () {
     const parts = ['aaaa', 'bbbb', 'cccc']
     let reads = 0
 
-    const stream = new ReadableStream({
+    const stream = new ReadableStream<Uint8Array>({
       pull (controller) {
         if (reads === parts.length) return controller.close()
         scratch.set(new TextEncoder().encode(parts[reads++]))
@@ -434,7 +436,7 @@ describe('using web streams', function () {
 
   it('should read the body of a fetch Response', async function () {
     const res = new Response('hello, world!')
-    const str = await getRawBody(res.body, {
+    const str = await getRawBody(res.body!, {
       encoding: 'utf-8',
       limit: '1kb'
     })
@@ -454,7 +456,7 @@ describe('using web streams', function () {
       method: 'POST',
       body: 'hello, world!'
     })
-    const str = await getRawBody(req.body, {
+    const str = await getRawBody(req.body!, {
       encoding: 'utf-8'
     })
     assert.strictEqual(str, 'hello, world!')
@@ -465,13 +467,13 @@ describe('using web streams', function () {
       new Blob(['hello, world!']).stream().pipeThrough(new CompressionStream('gzip'))
     )
     const str = await getRawBody(
-      new Blob([gzipped]).stream().pipeThrough(new DecompressionStream('gzip')),
+      new Blob([new Uint8Array(gzipped)]).stream().pipeThrough(new DecompressionStream('gzip')),
       { encoding: 'utf-8' }
     )
     assert.strictEqual(str, 'hello, world!')
   })
 
-  it('should not invoke the callback synchronously on early errors', function (done) {
+  it('should not invoke the callback synchronously on early errors', withDone(function (done) {
     let returned = false
 
     getRawBody(createWebStream(['hello, world!']), {
@@ -484,16 +486,16 @@ describe('using web streams', function () {
     })
 
     returned = true
-  })
+  }))
 
   it('should not catch or re-invoke a callback that throws', async function () {
-    // take over unhandled rejections for this test, so mocha's
+    // take over unhandled rejections for this test, so the runner's
     // own handler does not fail the test for the expected one
     const listeners = process.listeners('unhandledRejection')
     process.removeAllListeners('unhandledRejection')
 
     let calls = 0
-    let timer
+    let timer: NodeJS.Timeout | undefined
     const failure = new Error('callback bug')
 
     try {
@@ -513,7 +515,7 @@ describe('using web streams', function () {
       assert.strictEqual(await caught, failure)
       assert.strictEqual(calls, 1)
     } finally {
-      // restore mocha's handlers no matter how the test ends
+      // restore the runner's handlers no matter how the test ends
       clearTimeout(timer)
       process.removeAllListeners('unhandledRejection')
 
@@ -534,10 +536,10 @@ describe('using web streams', function () {
   })
 })
 
-function createWebStream (chunks, options) {
+function createWebStream (chunks: Array<string | Uint8Array>, options?: { binary?: boolean }): ReadableStream<Uint8Array | string> {
   const binary = !options || options.binary !== false
 
-  return new ReadableStream({
+  return new ReadableStream<Uint8Array | string>({
     start (controller) {
       for (const chunk of chunks) {
         controller.enqueue(binary && typeof chunk === 'string'

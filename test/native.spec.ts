@@ -1,9 +1,11 @@
-const assert = require('assert')
-const getRawBody = require('..')
-const Readable = require('stream').Readable
+import assert from 'node:assert'
+import { Readable } from 'node:stream'
+import { describe, it } from 'vitest'
+import getRawBody from '../src/index.ts'
+import { withDone } from './support/with-done.ts'
 
 describe('using native streams', function () {
-  it('should read contents', function (done) {
+  it('should read contents', withDone(function (done) {
     const stream = createStream(Buffer.from('hello, streams!'))
 
     getRawBody(stream, function (err, buf) {
@@ -11,9 +13,9 @@ describe('using native streams', function () {
       assert.strictEqual(buf.toString(), 'hello, streams!')
       done()
     })
-  })
+  }))
 
-  it('should read pre-buffered contents', function (done) {
+  it('should read pre-buffered contents', withDone(function (done) {
     const stream = createStream(Buffer.from('hello, streams!'))
     stream.push('oh, ')
 
@@ -22,20 +24,20 @@ describe('using native streams', function () {
       assert.strictEqual(buf.toString(), 'oh, hello, streams!')
       done()
     })
-  })
+  }))
 
-  it('should stop the stream on limit', function (done) {
+  it('should stop the stream on limit', withDone(function (done) {
     const stream = createStream(Buffer.from('hello, streams!'))
 
-    getRawBody(stream, { limit: 2 }, function (err, buf) {
+    getRawBody(stream, { limit: 2 }, function (err) {
       assert.ok(err)
       assert.strictEqual(err.status, 413)
       assert.strictEqual(err.limit, 2)
       process.nextTick(done)
     })
-  })
+  }))
 
-  it('should throw if stream is not readable', function (done) {
+  it('should throw if stream is not readable', withDone(function (done) {
     const stream = createStream(Buffer.from('hello, streams!'))
 
     stream.resume()
@@ -48,10 +50,10 @@ describe('using native streams', function () {
         process.nextTick(done)
       })
     })
-  })
+  }))
 })
 
-function createStream (buf) {
+function createStream (buf: Buffer): Readable {
   const stream = new Readable()
   stream._read = function () {
     stream.push(buf)
