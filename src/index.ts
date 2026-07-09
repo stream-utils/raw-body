@@ -641,5 +641,4 @@ function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: s
       read()
     }
   }
-
 }
