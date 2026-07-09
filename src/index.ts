@@ -293,11 +293,14 @@ function getRawBody (stream: RawBodyStream, options?: Readonly<Options> | Encodi
   let done = callback as InternalCallback | undefined
   let opts: Readonly<Options> = (options || {}) as Options
 
-  // light validation
+  // light validation.
   if (stream === undefined) {
     throw new TypeError('argument stream is required')
-  } else if (typeof stream !== 'object' || stream === null ||
-    (!isNodeReadable(stream) && !isWebReadable(stream))) {
+  }
+
+  const nodeReadable = typeof stream === 'object' && stream !== null && isNodeReadable(stream)
+
+  if (!nodeReadable && (typeof stream !== 'object' || stream === null || !isWebReadable(stream))) {
     throw new TypeError('argument stream must be a stream')
   }
 
@@ -343,23 +346,31 @@ function getRawBody (stream: RawBodyStream, options?: Readonly<Options> | Encodi
     : NaN
   const length = Number.isNaN(parsedLength) ? null : parsedLength
 
-  // select the reader for the stream type.
-  // node streams take precedence, so objects exposing both
-  // interfaces keep the historical duck-typed behavior
-  const read = isNodeReadable(stream)
-    ? (callback: InternalCallback) => readStream(stream, encoding, length, limit, opts.decoder, callback)
-    : (callback: InternalCallback) => readWebStream(stream, encoding, length, limit, opts.decoder, callback)
+  // dispatch to the reader for the stream type, without allocating an
+  // intermediate closure per call. node streams take precedence.
+  const decoder = opts.decoder
 
   if (done) {
     // classic callback style
-    return read(bindAsyncContext(done))
+    const bound = bindAsyncContext(done)
+    if (nodeReadable) {
+      readStream(stream, encoding, length, limit, decoder, bound)
+    } else {
+      readWebStream(stream, encoding, length, limit, decoder, bound)
+    }
+    return
   }
 
   return new Promise(function executor (resolve, reject) {
-    read(function onRead (err, buf) {
+    const onRead: InternalCallback = function onRead (err, buf) {
       if (err) return reject(err)
       resolve(buf as Buffer | string)
-    })
+    }
+    if (nodeReadable) {
+      readStream(stream, encoding, length, limit, decoder, onRead)
+    } else {
+      readWebStream(stream, encoding, length, limit, decoder, onRead)
+    }
   })
 }
 
