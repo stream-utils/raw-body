@@ -594,7 +594,10 @@ function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: s
   }
 
   function onRead (result: ReadableStreamReadResult<Uint8Array | string>): void {
-    if (result.done) return onDone()
+    if (result.done) {
+      // received is an exact byte count on this path
+      return finish(decoder, buffer as string | Buffer[], length, received, done, received)
+    }
 
     const value = result.value
 
@@ -639,8 +642,4 @@ function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: s
     }
   }
 
-  function onDone (): void {
-    // received is an exact byte count on this path
-    finish(decoder, buffer as string | Buffer[], length, received, done, received)
-  }
 }
