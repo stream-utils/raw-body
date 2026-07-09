@@ -614,6 +614,8 @@ function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: s
     let chunk: Uint8Array
 
     if (typeof value === 'string') {
+      // a string-emitting stream (e.g. TextDecoderStream) is already
+      // text: encode it back to utf-8 bytes
       chunk = Buffer.from(value)
     } else if (value instanceof Uint8Array) {
       // kept as-is, not wrapped in a Buffer: concat and the decoder

@@ -51,6 +51,24 @@ describe('using web streams', function () {
     assert.strictEqual(buf.toString(), 'hello, world!')
   })
 
+  it('should read a TextDecoderStream as a utf-8 Buffer', async function () {
+    // TextDecoderStream emits already-decoded string chunks; getRawBody
+    // re-encodes them to utf-8. multi-byte characters split across the
+    // underlying byte chunks must survive the round trip.
+    const bytes = Buffer.from('café ☕ 好', 'utf-8')
+    const byteChunks: Uint8Array[] = []
+
+    for (let i = 0; i < bytes.length; i += 2) {
+      byteChunks.push(bytes.subarray(i, i + 2))
+    }
+
+    const stream = createWebStream(byteChunks).pipeThrough(new TextDecoderStream())
+    const buf = await getRawBody(stream)
+
+    assert.ok(Buffer.isBuffer(buf))
+    assert.strictEqual(buf.toString('utf-8'), 'café ☕ 好')
+  })
+
   it('should error on string chunks when encoding is set', async function () {
     // an already-decoded stream, e.g. piped through TextDecoderStream;
     // re-decoding it with the declared encoding would corrupt the data
