@@ -77,6 +77,28 @@ describe('Raw Body', function () {
     })
   }))
 
+  it('should ignore a length that does not parse to a number', withDone(function (done) {
+    getRawBody(createStream(), {
+      // Number('') is 0, but parseInt('') is NaN: it must mean
+      // no expected length, not a guaranteed size mismatch
+      length: ''
+    }, function (err, buf) {
+      assert.ifError(err)
+      checkBuffer(buf)
+      done()
+    })
+  }))
+
+  it('should ignore a whitespace-only length', withDone(function (done) {
+    getRawBody(createStream(), {
+      length: ' '
+    }, function (err, buf) {
+      assert.ifError(err)
+      checkBuffer(buf)
+      done()
+    })
+  }))
+
   it('should work with limit', withDone(function (done) {
     getRawBody(createStream(), {
       limit: length + 1

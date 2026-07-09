@@ -42,9 +42,11 @@ describe('stream flowing', function () {
         length: defaultLimit
       }, function (err, body) {
         assert.ok(err)
-        assert.strictEqual(err.type, 'entity.too.large')
-        assert.strictEqual(err.message, 'request entity too large')
-        assert.strictEqual(err.statusCode, 413)
+        // the body passes its declared length before reaching the
+        // limit, so it halts on a size mismatch rather than a 413
+        assert.strictEqual(err.type, 'request.size.invalid')
+        assert.strictEqual(err.message, 'request size did not match content length')
+        assert.strictEqual(err.statusCode, 400)
         assert.strictEqual(body, undefined)
         assert.ok(stream.isPaused())
         done()

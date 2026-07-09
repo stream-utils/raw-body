@@ -40,7 +40,15 @@
 
     `npm run bench` compares the node and web stream paths with realistic request bodies.
 
+- Fail as soon as a stream exceeds its declared `length` - by [@bjohansebas](https://github.com/bjohansebas) in [#172](https://github.com/stream-utils/raw-body/pull/172)
+
+    A body that sends more bytes than its declared `length` now errors with a 400 `request.size.invalid` as soon as the excess arrives, rather than buffering the rest first. This bounds memory to `length` even when no `limit` is set. When both are set, a `length` overrun is reported before the `limit`'s 413.
+
 ### 🐞 Bug fixes
+
+- Fix a `length` that does not parse to a number failing every request - by [@bjohansebas](https://github.com/bjohansebas) in [#172](https://github.com/stream-utils/raw-body/pull/172)
+
+    Values like `''` passed the numeric pre-check but parsed to `NaN`, so the size check could never match and every request errored with a 400 `request.size.invalid`. They are now treated as no expected length, like any other unparseable value.
 
 - Fix node streams destroyed without an error never settling - by [@bjohansebas](https://github.com/bjohansebas) in [#158](https://github.com/stream-utils/raw-body/pull/158)
 
