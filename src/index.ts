@@ -476,6 +476,10 @@ function readStream (stream: NodeJS.ReadableStream & { readableEncoding?: string
 
     if (limit !== null && received > limit) {
       done(entityTooLargeError({ limit, received }))
+    } else if (length !== null && received > length) {
+      // past the declared length: a size mismatch, reported now like
+      // finish() does at stream end, instead of buffering the rest
+      done(sizeMismatchError(length, received))
     } else if (decoder) {
       try {
         buffer += decoder.write(chunk)
@@ -625,6 +629,10 @@ function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: s
 
     if (limit !== null && received > limit) {
       done(entityTooLargeError({ limit, received }))
+    } else if (length !== null && received > length) {
+      // past the declared length: a size mismatch, reported now like
+      // finish() does at stream end, instead of buffering the rest
+      done(sizeMismatchError(length, received))
     } else {
       try {
         if (decoder) {
