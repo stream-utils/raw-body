@@ -51,6 +51,28 @@ describe('using web streams', function () {
     assert.strictEqual(buf.toString(), 'hello, world!')
   })
 
+  it('should read a TextDecoderStream as a utf-8 Buffer', async function () {
+    // TextDecoderStream emits already-decoded string chunks; getRawBody
+    // re-encodes them to utf-8. multi-byte characters split across the
+    // underlying byte chunks must survive the round trip.
+    const bytes = Buffer.from('café ☕ 好', 'utf-8')
+
+    const byteStream = new ReadableStream<NodeJS.BufferSource>({
+      start (controller) {
+        for (let i = 0; i < bytes.length; i += 2) {
+          controller.enqueue(bytes.subarray(i, i + 2))
+        }
+        controller.close()
+      }
+    })
+
+    const stream = byteStream.pipeThrough(new TextDecoderStream())
+    const buf = await getRawBody(stream)
+
+    assert.ok(Buffer.isBuffer(buf))
+    assert.strictEqual(buf.toString('utf-8'), 'café ☕ 好')
+  })
+
   it('should error on string chunks when encoding is set', async function () {
     // an already-decoded stream, e.g. piped through TextDecoderStream;
     // re-decoding it with the declared encoding would corrupt the data
@@ -411,48 +433,7 @@ describe('using web streams', function () {
     assert.strictEqual(stream.locked, false)
   })
 
-  it('should copy chunks whose memory the producer reuses', async function () {
-    // a producer may legally recycle one scratch buffer
-    // across enqueues; retained views would all end up
-    // pointing at the last chunk's bytes
-    const scratch = new Uint8Array(4)
-    const parts = ['aaaa', 'bbbb', 'cccc']
-    let reads = 0
-
-    const stream = new ReadableStream<Uint8Array>({
-      pull (controller) {
-        if (reads === parts.length) return controller.close()
-        scratch.set(new TextEncoder().encode(parts[reads++]))
-        controller.enqueue(scratch)
-      }
-    })
-
-    const buf = await getRawBody(stream)
-    assert.strictEqual(buf.toString(), 'aaaabbbbcccc')
-  })
-
-  it('should copy reused chunk memory with a known length', async function () {
-    // same guarantee on the preallocated-body path taken
-    // when the length option is set
-    const scratch = new Uint8Array(4)
-    const parts = ['aaaa', 'bbbb', 'cccc']
-    let reads = 0
-
-    const stream = new ReadableStream<Uint8Array>({
-      pull (controller) {
-        if (reads === parts.length) return controller.close()
-        scratch.set(new TextEncoder().encode(parts[reads++]))
-        controller.enqueue(scratch)
-      }
-    })
-
-    const buf = await getRawBody(stream, { length: 12, limit: '1kb' })
-    assert.strictEqual(buf.toString(), 'aaaabbbbcccc')
-  })
-
-  it('should buffer more data than a capped allocation', async function () {
-    // without a limit the allocation starts capped at 1mb, so a
-    // later chunk must overflow it and force the body to grow
+  it('should assemble a large multi-chunk body', async function () {
     const chunk = Buffer.alloc(768 * 1024, 0x61)
     const big = Buffer.concat([chunk, chunk])
 

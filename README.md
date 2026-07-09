@@ -93,6 +93,15 @@ For web streams, any reader lock this module acquired is released both
 on success and on error, but the stream is never canceled, so on error
 you are responsible for disposing it, for example with `stream.cancel()`.
 
+Chunks read from a web stream are collected and assembled once at the
+end, without an intermediate copy. This relies on the producer following
+the streams contract and not reusing (or mutating) a chunk after it has
+been enqueued. Every standard source (a `fetch` `Response`/`Request`
+body, `Blob.stream()`, `Readable.toWeb`) satisfies this. If you build a
+custom `ReadableStream`, its underlying source must enqueue a fresh
+`Uint8Array` for each chunk rather than recycling one scratch buffer,
+otherwise the returned body may be corrupted.
+
 ## Errors
 
 This module creates errors with `status`/`statusCode`, the received and

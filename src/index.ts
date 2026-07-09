@@ -242,12 +242,13 @@ function finish (decoder: Decoder | null, buffer: string | Buffer[], length: num
     if (decoder) {
       string = buffer + (decoder.end() || '')
     } else {
-      const chunks = buffer as Buffer[]
+      const chunks = buffer as Uint8Array[]
+      const first = chunks[0]
 
       // a body delivered in a single chunk, the common case for
       // small bodies, is handed over as-is instead of copied
       string = chunks.length === 1
-        ? chunks[0]
+        ? (Buffer.isBuffer(first) ? first : Buffer.from(first.buffer, first.byteOffset, first.byteLength))
         : Buffer.concat(chunks, total)
     }
   } catch (err) {
@@ -507,18 +508,11 @@ function readStream (stream: NodeJS.ReadableStream & { readableEncoding?: string
 }
 
 /**
- * Convert a web stream chunk to a Buffer.
+ * View a chunk as a Buffer, for a decoder that expects one.
  */
 
-function toBuffer (chunk: unknown): Buffer {
-  if (typeof chunk === 'string') return Buffer.from(chunk)
-  if (Buffer.isBuffer(chunk)) return chunk
-
-  if (chunk instanceof Uint8Array) {
-    return Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength)
-  }
-
-  throw new TypeError('stream chunks must be Uint8Array or string')
+function toBuffer (chunk: Uint8Array): Buffer {
+  return Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength)
 }
 
 /**
@@ -527,8 +521,6 @@ function toBuffer (chunk: unknown): Buffer {
 
 function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: string | undefined | null, length: number | null, limit: number | null, createDecoder: CreateDecoder | undefined, callback: InternalCallback): void {
   let buffer: string | Buffer[] | null
-  let body: Uint8Array | null = null
-  let offset = 0
   let reader: ReadableStreamDefaultReader<Uint8Array | string> | null = null
 
   // check the length and limit options.
@@ -592,7 +584,6 @@ function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: s
 
   function done (err?: Error | null, string?: Buffer | string): void {
     buffer = null
-    body = null
 
     if (reader) {
       // release the stream, so users can handle the rest themselves
@@ -602,59 +593,46 @@ function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: s
     callback(err, string)
   }
 
-  /**
-   * Copy the chunk (the producer may reuse its memory) straight
-   * into the preallocated body, skipping the assembly copy.
-   */
-
-  function append (chunk: Buffer): void {
-    if (body === null) {
-      // only trust the declared length when the limit bounds it
-      const size = limit !== null ? length! : Math.min(length!, 1024 * 1024)
-
-      body = new Uint8Array(Math.max(size, received))
-    } else if (received > body.length) {
-      // excess over a capped allocation still has to be buffered
-      const grown = new Uint8Array(Math.max(body.length * 2, received))
-      grown.set(body.subarray(0, offset))
-      body = grown
+  function onRead (result: ReadableStreamReadResult<Uint8Array | string>): void {
+    if (result.done) {
+      // received is an exact byte count on this path
+      return finish(decoder, buffer as string | Buffer[], length, received, done, received)
     }
 
-    body.set(chunk, offset)
-    offset = received
-  }
-
-  function onRead (result: ReadableStreamReadResult<Uint8Array | string>): void {
-    if (result.done) return onDone()
+    const value = result.value
 
     // a stream of strings is already decoded, so decoding it
     // again with the declared encoding would corrupt the data
-    if (decoder && typeof result.value === 'string') {
+    if (decoder && typeof value === 'string') {
       return done(encodingSetError())
     }
 
-    let chunk: Buffer
+    let chunk: Uint8Array
 
-    try {
-      chunk = toBuffer(result.value)
-    } catch (err) {
-      return done(err as Error)
+    if (typeof value === 'string') {
+      // a string-emitting stream (e.g. TextDecoderStream) is already
+      // text: encode it back to utf-8 bytes
+      chunk = Buffer.from(value)
+    } else if (value instanceof Uint8Array) {
+      // kept as-is, not wrapped in a Buffer: concat and the decoder
+      // both accept a Uint8Array
+      chunk = value
+    } else {
+      return done(new TypeError('stream chunks must be Uint8Array or string'))
     }
 
-    received += chunk.length
+    received += chunk.byteLength
 
     if (limit !== null && received > limit) {
       done(entityTooLargeError({ limit, received }))
     } else {
       try {
         if (decoder) {
-          // consumed immediately: the zero-copy view is safe
-          buffer += decoder.write(chunk)
-        } else if (length !== null) {
-          append(chunk)
+          buffer += decoder.write(toBuffer(chunk))
         } else {
-          // copy: the producer may reuse the chunk's memory
-          (buffer as Buffer[]).push(Buffer.from(chunk))
+          // held and assembled at the end, trusting the producer not
+          // to reuse the chunk's memory, like the node path
+          (buffer as Uint8Array[]).push(chunk)
         }
       } catch (err) {
         return done(err as Error)
@@ -662,21 +640,5 @@ function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: s
 
       read()
     }
-  }
-
-  function onDone (): void {
-    if (length !== null && received !== length) {
-      return done(sizeMismatchError(length, received))
-    }
-
-    if (decoder === null && length !== null) {
-      if (body === null) return done(null, Buffer.alloc(0))
-
-      // zero-copy view of the accumulator
-      return done(null, Buffer.from(body.buffer, body.byteOffset, offset))
-    }
-
-    // received is an exact byte count on this path
-    finish(decoder, buffer as string | Buffer[], length, received, done, received)
   }
 }
