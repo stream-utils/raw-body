@@ -56,13 +56,17 @@ describe('using web streams', function () {
     // re-encodes them to utf-8. multi-byte characters split across the
     // underlying byte chunks must survive the round trip.
     const bytes = Buffer.from('café ☕ 好', 'utf-8')
-    const byteChunks: Uint8Array[] = []
 
-    for (let i = 0; i < bytes.length; i += 2) {
-      byteChunks.push(bytes.subarray(i, i + 2))
-    }
+    const byteStream = new ReadableStream<NodeJS.BufferSource>({
+      start (controller) {
+        for (let i = 0; i < bytes.length; i += 2) {
+          controller.enqueue(bytes.subarray(i, i + 2))
+        }
+        controller.close()
+      }
+    })
 
-    const stream = createWebStream(byteChunks).pipeThrough(new TextDecoderStream())
+    const stream = byteStream.pipeThrough(new TextDecoderStream())
     const buf = await getRawBody(stream)
 
     assert.ok(Buffer.isBuffer(buf))

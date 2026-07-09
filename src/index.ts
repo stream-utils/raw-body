@@ -508,18 +508,11 @@ function readStream (stream: NodeJS.ReadableStream & { readableEncoding?: string
 }
 
 /**
- * Convert a web stream chunk to a Buffer.
+ * View a chunk as a Buffer, for a decoder that expects one.
  */
 
-function toBuffer (chunk: unknown): Buffer {
-  if (typeof chunk === 'string') return Buffer.from(chunk)
-  if (Buffer.isBuffer(chunk)) return chunk
-
-  if (chunk instanceof Uint8Array) {
-    return Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength)
-  }
-
-  throw new TypeError('stream chunks must be Uint8Array or string')
+function toBuffer (chunk: Uint8Array): Buffer {
+  return Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength)
 }
 
 /**
