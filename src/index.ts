@@ -242,12 +242,13 @@ function finish (decoder: Decoder | null, buffer: string | Buffer[], length: num
     if (decoder) {
       string = buffer + (decoder.end() || '')
     } else {
-      const chunks = buffer as Buffer[]
+      const chunks = buffer as Uint8Array[]
+      const first = chunks[0]
 
       // a body delivered in a single chunk, the common case for
       // small bodies, is handed over as-is instead of copied
       string = chunks.length === 1
-        ? chunks[0]
+        ? (Buffer.isBuffer(first) ? first : Buffer.from(first.buffer, first.byteOffset, first.byteLength))
         : Buffer.concat(chunks, total)
     }
   } catch (err) {
@@ -602,33 +603,38 @@ function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: s
   function onRead (result: ReadableStreamReadResult<Uint8Array | string>): void {
     if (result.done) return onDone()
 
+    const value = result.value
+
     // a stream of strings is already decoded, so decoding it
     // again with the declared encoding would corrupt the data
-    if (decoder && typeof result.value === 'string') {
+    if (decoder && typeof value === 'string') {
       return done(encodingSetError())
     }
 
-    let chunk: Buffer
+    let chunk: Uint8Array
 
-    try {
-      chunk = toBuffer(result.value)
-    } catch (err) {
-      return done(err as Error)
+    if (typeof value === 'string') {
+      chunk = Buffer.from(value)
+    } else if (value instanceof Uint8Array) {
+      // kept as-is, not wrapped in a Buffer: concat and the decoder
+      // both accept a Uint8Array
+      chunk = value
+    } else {
+      return done(new TypeError('stream chunks must be Uint8Array or string'))
     }
 
-    received += chunk.length
+    received += chunk.byteLength
 
     if (limit !== null && received > limit) {
       done(entityTooLargeError({ limit, received }))
     } else {
       try {
         if (decoder) {
-          // consumed immediately: the zero-copy view is safe
-          buffer += decoder.write(chunk)
+          buffer += decoder.write(toBuffer(chunk))
         } else {
           // held and assembled at the end, trusting the producer not
           // to reuse the chunk's memory, like the node path
-          (buffer as Buffer[]).push(chunk)
+          (buffer as Uint8Array[]).push(chunk)
         }
       } catch (err) {
         return done(err as Error)
