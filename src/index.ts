@@ -337,10 +337,11 @@ function getRawBody (stream: RawBodyStream, options?: Readonly<Options> | Encodi
     throw new TypeError('option limit must be a number of bytes or a byte size string')
   }
 
-  // convert the expected length to an integer
-  const length = opts.length != null && !Number.isNaN(Number(opts.length))
+  // convert the expected length to an integer.
+  const parsedLength = opts.length != null && !Number.isNaN(Number(opts.length))
     ? parseInt(String(opts.length), 10)
-    : null
+    : NaN
+  const length = Number.isNaN(parsedLength) ? null : parsedLength
 
   // select the reader for the stream type.
   // node streams take precedence, so objects exposing both

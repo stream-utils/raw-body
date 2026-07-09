@@ -46,6 +46,10 @@
 
 ### 🐞 Bug fixes
 
+- Fix a `length` that does not parse to a number failing every request - by [@bjohansebas](https://github.com/bjohansebas) in [#172](https://github.com/stream-utils/raw-body/pull/172)
+
+    Values like `''` passed the numeric pre-check but parsed to `NaN`, so the size check could never match and every request errored with a 400 `request.size.invalid`. They are now treated as no expected length, like any other unparseable value.
+
 - Fix node streams destroyed without an error never settling - by [@bjohansebas](https://github.com/bjohansebas) in [#158](https://github.com/stream-utils/raw-body/pull/158)
 
     They now error through the callback / reject the promise with the same 400 `request.aborted` error as the web path, instead of never invoking the callback or settling the promise.
