@@ -352,7 +352,7 @@ function getRawBody (stream: RawBodyStream, options?: Readonly<Options> | Encodi
 
   if (done) {
     // classic callback style
-    return read(AsyncResource.bind(done, done.name || 'bound-anonymous-fn', null))
+    return read(bindAsyncContext(done))
   }
 
   return new Promise(function executor (resolve, reject) {
@@ -650,4 +650,9 @@ function readWebStream (stream: ReadableStream<Uint8Array | string>, encoding: s
       read()
     }
   }
+}
+
+function bindAsyncContext (fn: InternalCallback): InternalCallback {
+  const resource = new AsyncResource(fn.name || 'bound-anonymous-fn')
+  return resource.runInAsyncScope.bind(resource, fn, null) as unknown as InternalCallback
 }
