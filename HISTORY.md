@@ -1,4 +1,4 @@
-## UNRELEASED CHANGES
+## 4.0.0
 
 ### ⚠️ Breaking changes
 
