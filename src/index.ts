@@ -19,7 +19,12 @@ export type Encoding = string | true
 /**
  * The stream types accepted by `getRawBody`.
  */
-export type RawBodyStream = NodeJS.ReadableStream | Readable | ReadableStream<Uint8Array | string>
+export type NodeRawBodyStream = NodeJS.ReadableStream | Readable
+
+/**
+ * The stream types accepted by `getRawBodyWeb`.
+ */
+export type WebRawBodyStream = ReadableStream<Uint8Array | string>
 
 /**
  * A streaming decoder, turning body chunks into a string.
@@ -259,50 +264,19 @@ function finish (decoder: Decoder | null, buffer: string | Buffer[], length: num
 }
 
 /**
- * Gets the entire buffer of a stream as a `Buffer`, delivered to the
- * callback. Validates the stream's length against an expected length
- * and maximum limit. Ideal for parsing request bodies.
+ * The reader for a stream type: `readStream` or `readWebStream`.
  */
-function getRawBody (stream: RawBodyStream, callback: Callback<Buffer>): void
+type ReadBody<S> = (stream: S, encoding: string | null, length: number | null, limit: number | null, createDecoder: CreateDecoder | undefined, callback: InternalCallback) => void
+
 /**
- * Gets the entire buffer of a stream decoded as a string with the
- * given encoding, delivered to the callback. Validates the stream's
- * length against an expected length and maximum limit. Ideal for
- * parsing request bodies.
+ * Validate the options and read the stream, shared by `getRawBody`
+ * and `getRawBodyWeb`. The reader is passed in, without allocating
+ * an intermediate closure per call.
  */
-function getRawBody (stream: RawBodyStream, options: Readonly<Options & { encoding: Encoding }> | Encoding, callback: Callback<string>): void
-/**
- * Gets the entire buffer of a stream as a `Buffer`, delivered to the
- * callback. Validates the stream's length against an expected length
- * and maximum limit. Ideal for parsing request bodies.
- */
-function getRawBody (stream: RawBodyStream, options: Readonly<Options> | null, callback: Callback<Buffer>): void
-/**
- * Gets the entire buffer of a stream decoded as a string with the
- * given encoding. Validates the stream's length against an expected
- * length and maximum limit. Ideal for parsing request bodies.
- */
-function getRawBody (stream: RawBodyStream, options: Readonly<Options & { encoding: Encoding }> | Encoding): Promise<string>
-/**
- * Gets the entire buffer of a stream as a `Buffer`. Validates the
- * stream's length against an expected length and maximum limit.
- * Ideal for parsing request bodies.
- */
-function getRawBody (stream: RawBodyStream, options?: Readonly<Options> | null): Promise<Buffer>
-function getRawBody (stream: RawBodyStream, options?: Readonly<Options> | Encoding | Callback<Buffer> | null, callback?: Callback<Buffer> | Callback<string>): Promise<Buffer | string> | void {
+
+function getBody<S> (read: ReadBody<S>, stream: S, options: Readonly<Options> | Encoding | Callback<Buffer> | null | undefined, callback: Callback<Buffer> | Callback<string> | undefined): Promise<Buffer | string> | void {
   let done = callback as InternalCallback | undefined
   let opts: Readonly<Options> = (options || {}) as Options
-
-  // light validation.
-  if (stream === undefined) {
-    throw new TypeError('argument stream is required')
-  }
-
-  const nodeReadable = typeof stream === 'object' && stream !== null && isNodeReadable(stream)
-
-  if (!nodeReadable && (typeof stream !== 'object' || stream === null || !isWebReadable(stream))) {
-    throw new TypeError('argument stream must be a stream')
-  }
 
   if (options === true || typeof options === 'string') {
     // short cut for encoding
@@ -346,36 +320,112 @@ function getRawBody (stream: RawBodyStream, options?: Readonly<Options> | Encodi
     : NaN
   const length = Number.isNaN(parsedLength) ? null : parsedLength
 
-  // dispatch to the reader for the stream type, without allocating an
-  // intermediate closure per call. node streams take precedence.
   const decoder = opts.decoder
 
   if (done) {
     // classic callback style
-    const bound = bindAsyncContext(done)
-    if (nodeReadable) {
-      readStream(stream, encoding, length, limit, decoder, bound)
-    } else {
-      readWebStream(stream, encoding, length, limit, decoder, bound)
-    }
+    read(stream, encoding, length, limit, decoder, bindAsyncContext(done))
     return
   }
 
   return new Promise(function executor (resolve, reject) {
-    const onRead: InternalCallback = function onRead (err, buf) {
+    read(stream, encoding, length, limit, decoder, function onRead (err, buf) {
       if (err) return reject(err)
       resolve(buf as Buffer | string)
-    }
-    if (nodeReadable) {
-      readStream(stream, encoding, length, limit, decoder, onRead)
-    } else {
-      readWebStream(stream, encoding, length, limit, decoder, onRead)
-    }
+    })
   })
 }
 
+/**
+ * Gets the entire buffer of a node stream as a `Buffer`, delivered to
+ * the callback. Validates the stream's length against an expected
+ * length and maximum limit. Ideal for parsing request bodies.
+ */
+function getRawBody (stream: NodeRawBodyStream, callback: Callback<Buffer>): void
+/**
+ * Gets the entire buffer of a node stream decoded as a string with the
+ * given encoding, delivered to the callback. Validates the stream's
+ * length against an expected length and maximum limit. Ideal for
+ * parsing request bodies.
+ */
+function getRawBody (stream: NodeRawBodyStream, options: Readonly<Options & { encoding: Encoding }> | Encoding, callback: Callback<string>): void
+/**
+ * Gets the entire buffer of a node stream as a `Buffer`, delivered to
+ * the callback. Validates the stream's length against an expected
+ * length and maximum limit. Ideal for parsing request bodies.
+ */
+function getRawBody (stream: NodeRawBodyStream, options: Readonly<Options> | null, callback: Callback<Buffer>): void
+/**
+ * Gets the entire buffer of a node stream decoded as a string with the
+ * given encoding. Validates the stream's length against an expected
+ * length and maximum limit. Ideal for parsing request bodies.
+ */
+function getRawBody (stream: NodeRawBodyStream, options: Readonly<Options & { encoding: Encoding }> | Encoding): Promise<string>
+/**
+ * Gets the entire buffer of a node stream as a `Buffer`. Validates the
+ * stream's length against an expected length and maximum limit.
+ * Ideal for parsing request bodies.
+ */
+function getRawBody (stream: NodeRawBodyStream, options?: Readonly<Options> | null): Promise<Buffer>
+function getRawBody (stream: NodeRawBodyStream, options?: Readonly<Options> | Encoding | Callback<Buffer> | null, callback?: Callback<Buffer> | Callback<string>): Promise<Buffer | string> | void {
+  // light validation.
+  if (stream === undefined) {
+    throw new TypeError('argument stream is required')
+  }
+
+  if (typeof stream !== 'object' || stream === null || !isNodeReadable(stream)) {
+    throw new TypeError('argument stream must be a node stream')
+  }
+
+  return getBody(readStream, stream, options, callback)
+}
+
+/**
+ * Gets the entire buffer of a web `ReadableStream` as a `Buffer`,
+ * delivered to the callback. Validates the stream's length against an
+ * expected length and maximum limit. Ideal for parsing request bodies.
+ */
+function getRawBodyWeb (stream: WebRawBodyStream, callback: Callback<Buffer>): void
+/**
+ * Gets the entire buffer of a web `ReadableStream` decoded as a string
+ * with the given encoding, delivered to the callback. Validates the
+ * stream's length against an expected length and maximum limit. Ideal
+ * for parsing request bodies.
+ */
+function getRawBodyWeb (stream: WebRawBodyStream, options: Readonly<Options & { encoding: Encoding }> | Encoding, callback: Callback<string>): void
+/**
+ * Gets the entire buffer of a web `ReadableStream` as a `Buffer`,
+ * delivered to the callback. Validates the stream's length against an
+ * expected length and maximum limit. Ideal for parsing request bodies.
+ */
+function getRawBodyWeb (stream: WebRawBodyStream, options: Readonly<Options> | null, callback: Callback<Buffer>): void
+/**
+ * Gets the entire buffer of a web `ReadableStream` decoded as a string
+ * with the given encoding. Validates the stream's length against an
+ * expected length and maximum limit. Ideal for parsing request bodies.
+ */
+function getRawBodyWeb (stream: WebRawBodyStream, options: Readonly<Options & { encoding: Encoding }> | Encoding): Promise<string>
+/**
+ * Gets the entire buffer of a web `ReadableStream` as a `Buffer`.
+ * Validates the stream's length against an expected length and
+ * maximum limit. Ideal for parsing request bodies.
+ */
+function getRawBodyWeb (stream: WebRawBodyStream, options?: Readonly<Options> | null): Promise<Buffer>
+function getRawBodyWeb (stream: WebRawBodyStream, options?: Readonly<Options> | Encoding | Callback<Buffer> | null, callback?: Callback<Buffer> | Callback<string>): Promise<Buffer | string> | void {
+  // light validation.
+  if (stream === undefined) {
+    throw new TypeError('argument stream is required')
+  }
+
+  if (typeof stream !== 'object' || stream === null || !isWebReadable(stream)) {
+    throw new TypeError('argument stream must be a web ReadableStream')
+  }
+
+  return getBody(readWebStream, stream, options, callback)
+}
+
 export default getRawBody
-export { getRawBody }
+export { getRawBody, getRawBodyWeb }
 
 /**
  * Halt a stream.

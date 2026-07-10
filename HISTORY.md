@@ -24,9 +24,9 @@
 
 ### 🚀 Improvements
 
-- Support reading WHATWG `ReadableStream` (web streams) - by [@bjohansebas](https://github.com/bjohansebas) in [#148](https://github.com/stream-utils/raw-body/pull/148) and [#160](https://github.com/stream-utils/raw-body/pull/160)
+- Support reading WHATWG `ReadableStream` (web streams) through the new `getRawBodyWeb` export - by [@bjohansebas](https://github.com/bjohansebas) in [#148](https://github.com/stream-utils/raw-body/pull/148), [#160](https://github.com/stream-utils/raw-body/pull/160) and [#174](https://github.com/stream-utils/raw-body/pull/174)
 
-    `fetch` `Request`/`Response` bodies, `Blob.stream()`, `TransformStream` readables, and `Readable.toWeb()` bridges can be read directly. Streams already locked, read, or cancelled error with a 500 `stream.not.readable`; client aborts are mapped to the same 400 `request.aborted` error as node streams, with the original error in `cause`; string chunks are accepted without an encoding (UTF-8 `Buffer`), but error with a 500 `stream.encoding.set` when combined with one, since the stream is already decoded; non-byte chunks (e.g. `ArrayBuffer`) error with a `TypeError`. On error the reader lock is released, but the stream is not cancelled; disposing it is up to the caller.
+    `fetch` `Request`/`Response` bodies, `Blob.stream()`, `TransformStream` readables, and `Readable.toWeb()` bridges can be read with `getRawBodyWeb`, which takes the same options as `getRawBody`; `getRawBody` itself keeps accepting only node streams. Streams already locked, read, or cancelled error with a 500 `stream.not.readable`; client aborts are mapped to the same 400 `request.aborted` error as node streams, with the original error in `cause`; string chunks are accepted without an encoding (UTF-8 `Buffer`), but error with a 500 `stream.encoding.set` when combined with one, since the stream is already decoded; non-byte chunks (e.g. `ArrayBuffer`) error with a `TypeError`. On error the reader lock is released, but the stream is not cancelled; disposing it is up to the caller.
 
 - Add a custom `decoder` option - by [@bjohansebas](https://github.com/bjohansebas) in [#145](https://github.com/stream-utils/raw-body/pull/145)
 

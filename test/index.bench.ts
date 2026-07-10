@@ -1,6 +1,6 @@
 import { Readable } from 'node:stream'
 import { bench, describe } from 'vitest'
-import getRawBody from '../src/index.ts'
+import getRawBody, { getRawBodyWeb } from '../src/index.ts'
 
 /**
  * Compares the node stream path against the web stream path with
@@ -73,7 +73,7 @@ for (const scenario of scenarios) {
     })
 
     bench('web stream', async () => {
-      await getRawBody(webStream(chunks), options)
+      await getRawBodyWeb(webStream(chunks), options)
     })
   })
 
@@ -83,7 +83,7 @@ for (const scenario of scenarios) {
     })
 
     bench('web stream', async () => {
-      await getRawBody(webStream(chunks), stringOptions)
+      await getRawBodyWeb(webStream(chunks), stringOptions)
     })
   })
 
@@ -97,7 +97,7 @@ for (const scenario of scenarios) {
     })
 
     bench('web stream', async () => {
-      await getRawBody(webStream(chunks), noLengthOptions)
+      await getRawBodyWeb(webStream(chunks), noLengthOptions)
     })
   })
 }

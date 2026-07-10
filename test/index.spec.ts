@@ -18,13 +18,16 @@ describe('Raw Body', function () {
     // @ts-expect-error missing stream argument
     assert.throws(function () { getRawBody() }, /argument stream is required/)
     // @ts-expect-error invalid stream argument
-    assert.throws(function () { getRawBody(null) }, /argument stream must be a stream/)
+    assert.throws(function () { getRawBody(null) }, /argument stream must be a node stream/)
     // @ts-expect-error invalid stream argument
-    assert.throws(function () { getRawBody(42) }, /argument stream must be a stream/)
+    assert.throws(function () { getRawBody(42) }, /argument stream must be a node stream/)
     // @ts-expect-error invalid stream argument
-    assert.throws(function () { getRawBody('str') }, /argument stream must be a stream/)
+    assert.throws(function () { getRawBody('str') }, /argument stream must be a node stream/)
     // @ts-expect-error invalid stream argument
-    assert.throws(function () { getRawBody({}) }, /argument stream must be a stream/)
+    assert.throws(function () { getRawBody({}) }, /argument stream must be a node stream/)
+    // a web ReadableStream belongs to getRawBodyWeb
+    // @ts-expect-error invalid stream argument
+    assert.throws(function () { getRawBody(new ReadableStream()) }, /argument stream must be a node stream/)
   })
 
   it('should work without any options', withDone(function (done) {
@@ -328,22 +331,6 @@ describe('Raw Body', function () {
       assert.strictEqual(err.message, 'specified encoding unsupported')
       assert.strictEqual(err.status, 415)
       assert.strictEqual(err.type, 'encoding.unsupported')
-      done()
-    })
-  }))
-
-  it('should prefer the node stream interface when both are present', withDone(function (done) {
-    const stream = createStream(Buffer.from('hello, world!')) as Readable & { getReader?: () => never }
-
-    // a wrapper library may decorate a node stream with a
-    // web-stream compatibility shim; the node path must win
-    stream.getReader = function () {
-      throw new Error('getReader should not be called')
-    }
-
-    getRawBody(stream, { encoding: true }, function (err, str) {
-      assert.ifError(err)
-      assert.strictEqual(str, 'hello, world!')
       done()
     })
   }))

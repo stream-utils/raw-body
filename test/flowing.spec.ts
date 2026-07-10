@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import { Readable, Writable } from 'node:stream'
 import { describe, it } from 'vitest'
-import getRawBody from '../src/index.ts'
+import getRawBody, { getRawBodyWeb } from '../src/index.ts'
 import { withDone } from './support/with-done.ts'
 
 const defaultLimit = 1024 * 1024
@@ -114,7 +114,7 @@ describe('stream flowing', function () {
     it('should stop pulling', withDone(function (done) {
       const stream = createInfiniteWebStream()
 
-      getRawBody(stream, {
+      getRawBodyWeb(stream, {
         limit: defaultLimit
       }, function (err) {
         assert.ok(err)
@@ -129,7 +129,7 @@ describe('stream flowing', function () {
     it('should not pull when length exceeds limit', withDone(function (done) {
       const stream = createInfiniteWebStream()
 
-      getRawBody(stream, {
+      getRawBodyWeb(stream, {
         length: defaultLimit * 2,
         limit: defaultLimit
       }, function (err) {
