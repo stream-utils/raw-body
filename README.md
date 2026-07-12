@@ -23,7 +23,7 @@ npm install raw-body
 ## API
 
 ```js
-import getRawBody from 'raw-body'
+import getRawBody, { getRawBodyWeb } from 'raw-body'
 ```
 
 The package is ESM-only. CommonJS consumers can load it with
@@ -32,15 +32,26 @@ available in all supported Node.js versions:
 
 ```js
 const getRawBody = require('raw-body').default
+const { getRawBodyWeb } = require('raw-body')
 ```
 
 ### getRawBody(stream, [options], [callback])
 
 **Returns a promise if no callback specified.**
 
-The `stream` argument can be a Node.js readable stream (like an HTTP request)
-or a [WHATWG `ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream)
+The `stream` argument must be a Node.js readable stream
+(like an HTTP request).
+
+### getRawBodyWeb(stream, [options], [callback])
+
+**Returns a promise if no callback specified.**
+
+The `stream` argument must be a
+[WHATWG `ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream)
 (like the body of a `fetch` `Response`).
+
+Both functions accept the same options and behave the same, they only
+differ in the kind of stream they read.
 
 Options:
 
@@ -82,7 +93,7 @@ getRawBody(stream, {
 
 You can also pass a string in place of options to just specify the encoding.
 
-If an error occurs, the stream will be paused, everything unpiped,
+For node streams, if an error occurs, the stream will be paused, everything unpiped,
 and you are responsible for correctly disposing the stream.
 For HTTP requests, you may need to finish consuming the stream if
 you want to keep the socket open for future requests. For streams

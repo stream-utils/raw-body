@@ -48,17 +48,17 @@ app.use(function * (next) {
 ## Simple Hono example
 
 Hono's request is a `fetch` `Request`, so its body is a WHATWG
-`ReadableStream` and can be read directly:
+`ReadableStream` and can be read with `getRawBodyWeb`:
 
 ```js
 import { Hono } from 'hono'
-import getRawBody from 'raw-body'
+import { getRawBodyWeb } from 'raw-body'
 
 const app = new Hono()
 
 app.post('/', async (c) => {
   try {
-    const text = await getRawBody(c.req.raw.body, {
+    const text = await getRawBodyWeb(c.req.raw.body, {
       length: c.req.header('content-length'),
       limit: '1mb',
       encoding: 'utf-8'
